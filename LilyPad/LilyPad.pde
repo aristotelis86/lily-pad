@@ -13,8 +13,8 @@ can only have one setup & run at a time.
 *********************************************************/
 
 Window view; // window in h-units
-int nx = (int)pow(2,6); // x-dir
-int ny = (int)pow(2,6); // y-dir
+int nx = (int)pow(2,8); // x-dir
+int ny = (int)pow(2,8); // y-dir
 
 float L = nx/4.;
 float M = 10;
@@ -27,6 +27,9 @@ PVector align = new PVector(1, 0);
 float t=0;
 float dt = 0.1;
 
+float sinAmp = L/10.;
+float sinN = 2.;
+
 BDIM flow;
 FlexibleSheet sheet;
 //Body sheet;
@@ -37,22 +40,38 @@ void setup() {
   
   sheet = new FlexibleSheet(L, M, stiff, xpos, ypos, align, view);
   
+  // Create the distortion
+  int nn = sheet.cpoints.length;
+  float [] x = new float[nn];
+  float [] y = new float[nn];
+  
+  x[0] = xpos;
+  y[0] = ypos;
+  for (int i = 1; i < nn; i++) {
+    x[i] = (L/(nn-1)) + x[i-1];
+    y[i] = sinAmp * sin(sinN*PI*(x[i]-xpos)/L) + ypos;
+    sheet.cpoints[i].position.x = x[i];
+    sheet.cpoints[i].position.y = y[i];
+  }
+  sheet.getOrth();
+  dt = sheet.dtmax;
+  
   flow = new BDIM(nx, ny, dt, sheet, 0.01, true);
   
-  println(sheet.unsteady());
 } // end of setup
 
 
 void draw() {
   
-  if (t<3) sheet.move();
+  //if (t<3) sheet.move();
   //sheet.follow();
+  //sheet.update(dt, new PVector(0,0));
   flow.update(sheet);
   flow.update2();
   
   flow.u.curl().display(-0.5,0.5);
   sheet.display();
-  //println(sheet.velocity( 2, 0.1, sheet.coords.get(5).x, sheet.coords.get(5).y ));
+
   t += dt;
 }
 void mousePressed(){sheet.mousePressed();}    // user mouse...
