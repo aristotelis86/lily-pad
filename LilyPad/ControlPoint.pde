@@ -112,4 +112,13 @@ class ControlPoint {
     this.clearForce();
   }
   
+  void UpdatePosition(float x, float y) {
+    position.x = x;
+    position.y = y;
+  }
+  
+  void UpdateVelocity(float x, float y) {
+    velocity.x = x;
+    velocity.y = y;
+  }
 } // end of ControlPoint class
