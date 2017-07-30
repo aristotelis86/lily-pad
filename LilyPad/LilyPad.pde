@@ -17,8 +17,8 @@ int nx = (int)pow(2,7); // x-dir
 int ny = (int)pow(2,7); // y-dir
 
 float L = nx/4.;
-float M = 100;
-float stiff = 1000;
+float M = 1000;
+float stiff = 100;
 
 float xpos = nx/4.;
 float ypos = ny/2.;
@@ -40,7 +40,6 @@ void setup() {
   
   sheet = new FlexibleSheet(L, M, stiff, xpos, ypos, align, view);
   
-  
   //// Create the distortion
   int nn = sheet.cpoints.length;
   //float [] x = new float[nn];
@@ -54,7 +53,7 @@ void setup() {
   //}
   //sheet.UpdateState(x, y);
   sheet.cpoints[0].makeFixed();
-  sheet.cpoints[nn-1].makeFixed();
+  //sheet.cpoints[nn-1].makeFixed();
   
   dt = sheet.dtmax;
   
@@ -68,9 +67,9 @@ void draw() {
   //if (t<3) sheet.move();
   //sheet.follow();
   sheet.update(dt, flow.p);
+  sheet.update2(dt, flow.p);
   //updateSheet(t);
   flow.update(sheet);
-  sheet.update2(dt, flow.p);
   flow.update2();
   
   flow.u.curl().display(-0.5,0.5);
