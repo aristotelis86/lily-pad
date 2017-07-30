@@ -231,7 +231,9 @@ class FlexibleSheet extends LineSegBody {
     }
     // accumulate any acceleration due to external forces
     for (int i = 0; i < N; i++) {
-      accelCurrent[i].add(ExtForce[i]);
+      PVector ext = ExtForce[i].copy();
+      ext.div(pMass);
+      accelCurrent[i].add(ext);
     }
     
     // Calculate estimation
@@ -277,7 +279,9 @@ class FlexibleSheet extends LineSegBody {
     }
     // accumulate any acceleration due to external forces
     for (int i = 0; i < N; i++) {
-      accelPred[i].add(ExtForce[i]);
+      PVector ext = ExtForce[i].copy();
+      ext.div(pMass);
+      accelPred[i].add(ext);
     }
     
     // Calculate at the new state
