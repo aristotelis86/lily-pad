@@ -9,21 +9,21 @@ class CollisionSolver {
   int [] NMass, NSpring;
   FlexibleSheet FSheet;
   
-  ArrayList<Particle> ListMass = new ArrayList<Particle>();
+  ArrayList<ControlPoint> ListMass = new ArrayList<ControlPoint>();
   ArrayList<Spring> ListSpring = new ArrayList<Spring>();
   
-  Particle [] LocalMass;
+  ControlPoint [] LocalMass;
   Spring [] LocalSpring;
   
-  ArrayList<Particle> NBoundPointCol; // For point-boundary collisions
-  ArrayList<Particle> SBoundPointCol; // For point-boundary collisions
-  ArrayList<Particle> WBoundPointCol; // For point-boundary collisions
-  ArrayList<Particle> EBoundPointCol; // For point-boundary collisions
+  ArrayList<ControlPoint> NBoundPointCol; // For point-boundary collisions
+  ArrayList<ControlPoint> SBoundPointCol; // For point-boundary collisions
+  ArrayList<ControlPoint> WBoundPointCol; // For point-boundary collisions
+  ArrayList<ControlPoint> EBoundPointCol; // For point-boundary collisions
   
-  ArrayList<Particle> PointACol; // For point-point collisions
-  ArrayList<Particle> PointBCol; // For point-point collisions
+  ArrayList<ControlPoint> PointACol; // For point-point collisions
+  ArrayList<ControlPoint> PointBCol; // For point-point collisions
   
-  ArrayList<Particle> PointCol; // For point-edge collisions
+  ArrayList<ControlPoint> PointCol; // For point-edge collisions
   ArrayList<Spring> SpringCol;  // For point-edge collisions
   FloatList TimeCol;            // For point-edge collisions
   FloatList LenCol;             // For point-edge collisions
@@ -39,21 +39,21 @@ class CollisionSolver {
     N = FSheet.numOfpoints;
     Ns = FSheet.numOfsprings;
     
-    LocalMass = new Particle[N];
+    LocalMass = new ControlPoint[N];
     LocalSpring = new Spring[Ns];
     
     LocalMass = FSheet.prtcl;
     LocalSpring = FSheet.springs;
     
-    NBoundPointCol = new ArrayList<Particle>();
-    SBoundPointCol = new ArrayList<Particle>();
-    WBoundPointCol = new ArrayList<Particle>();
-    EBoundPointCol = new ArrayList<Particle>();
+    NBoundPointCol = new ArrayList<ControlPoint>();
+    SBoundPointCol = new ArrayList<ControlPoint>();
+    WBoundPointCol = new ArrayList<ControlPoint>();
+    EBoundPointCol = new ArrayList<ControlPoint>();
     
-    PointACol = new ArrayList<Particle>();
-    PointBCol = new ArrayList<Particle>();
+    PointACol = new ArrayList<ControlPoint>();
+    PointBCol = new ArrayList<ControlPoint>();
     
-    PointCol = new ArrayList<Particle>();
+    PointCol = new ArrayList<ControlPoint>();
     SpringCol = new ArrayList<Spring>();
     TimeCol = new FloatList();
     LenCol = new FloatList();
@@ -87,21 +87,21 @@ class CollisionSolver {
       }
     }
     
-    LocalMass = new Particle[N];
+    LocalMass = new ControlPoint[N];
     LocalSpring = new Spring[Ns];
     
     for (int i = 0; i < N; i++) LocalMass[i] = ListMass.get(i);
     for (int i = 0; i < Ns; i++) LocalSpring[i] = ListSpring.get(i);
     
-    NBoundPointCol = new ArrayList<Particle>();
-    SBoundPointCol = new ArrayList<Particle>();
-    WBoundPointCol = new ArrayList<Particle>();
-    EBoundPointCol = new ArrayList<Particle>();
+    NBoundPointCol = new ArrayList<ControlPoint>();
+    SBoundPointCol = new ArrayList<ControlPoint>();
+    WBoundPointCol = new ArrayList<ControlPoint>();
+    EBoundPointCol = new ArrayList<ControlPoint>();
     
-    PointACol = new ArrayList<Particle>();
-    PointBCol = new ArrayList<Particle>();
+    PointACol = new ArrayList<ControlPoint>();
+    PointBCol = new ArrayList<ControlPoint>();
     
-    PointCol = new ArrayList<Particle>();
+    PointCol = new ArrayList<ControlPoint>();
     SpringCol = new ArrayList<Spring>();
     TimeCol = new FloatList();
     LenCol = new FloatList();
@@ -145,7 +145,7 @@ class CollisionSolver {
     int col_count = 0;
     
     for (int i=0; i < N; i++) {
-      Particle P = LocalMass[i];
+      ControlPoint P = LocalMass[i];
       clearRad = P.diameter/2;
       
       if (P.position.x < clearRad) {
@@ -175,10 +175,10 @@ class CollisionSolver {
     int col_count = 0;
     
     for (int i = 0; i < N-1; i++) {
-      Particle pi = LocalMass[i];
+      ControlPoint pi = LocalMass[i];
       
       for (int j = i+1; j < N; j++) {
-        Particle pj = LocalMass[j];
+        ControlPoint pj = LocalMass[j];
         
         clearRad = (pi.diameter + pj.diameter)/6;
         
@@ -200,7 +200,7 @@ class CollisionSolver {
     int col_count = 0;
     
     for (int i = 0; i<N; i++) {
-      Particle p = LocalMass[i];
+      ControlPoint p = LocalMass[i];
       for (int j=0; j<Ns; j++) {
         Spring s = LocalSpring[j];
         
@@ -339,38 +339,38 @@ class CollisionSolver {
     if (NBP>0) {
       // Resolve north bound
       for (int j = 0; j<NBP; j++) {
-        Particle myP = NBoundPointCol.get(j);
-        myP.updatePosition(myP.position.x, myP.diameter);
-        myP.updateVelocity(myP.velocity.x, -myP.velocity.y);
+        ControlPoint myP = NBoundPointCol.get(j);
+        myP.UpdatePosition(myP.position.x, myP.diameter);
+        myP.UpdateVelocity(myP.velocity.x, -myP.velocity.y);
       }
-      NBoundPointCol = new ArrayList<Particle>();
+      NBoundPointCol = new ArrayList<ControlPoint>();
     }
     if (SBP>0) {
       // Resolve south bound
       for (int j = 0; j<SBP; j++) {
-        Particle myP = SBoundPointCol.get(j);
-        myP.updatePosition(myP.position.x, height-myP.diameter);
-        myP.updateVelocity(myP.velocity.x, -myP.velocity.y);
+        ControlPoint myP = SBoundPointCol.get(j);
+        myP.UpdatePosition(myP.position.x, height-myP.diameter);
+        myP.UpdateVelocity(myP.velocity.x, -myP.velocity.y);
       }
-      SBoundPointCol = new ArrayList<Particle>();
+      SBoundPointCol = new ArrayList<ControlPoint>();
     }
     if (WBP>0) {
       // Resolve west bound
       for (int j = 0; j<WBP; j++) {
-        Particle myP = WBoundPointCol.get(j);
-        myP.updatePosition(myP.diameter, myP.position.y);
-        myP.updateVelocity(-myP.velocity.x, myP.velocity.y);
+        ControlPoint myP = WBoundPointCol.get(j);
+        myP.UpdatePosition(myP.diameter, myP.position.y);
+        myP.UpdateVelocity(-myP.velocity.x, myP.velocity.y);
       }
-      WBoundPointCol = new ArrayList<Particle>();
+      WBoundPointCol = new ArrayList<ControlPoint>();
     }
     if (EBP>0) {
       // Resolve east bound
       for (int j = 0; j<EBP; j++) {
-        Particle myP = EBoundPointCol.get(j);
-        myP.updatePosition(width-myP.diameter, myP.position.y);
-        myP.updateVelocity(-myP.velocity.x, myP.velocity.y);
+        ControlPoint myP = EBoundPointCol.get(j);
+        myP.UpdatePosition(width-myP.diameter, myP.position.y);
+        myP.UpdateVelocity(-myP.velocity.x, myP.velocity.y);
       }
-      EBoundPointCol = new ArrayList<Particle>();
+      EBoundPointCol = new ArrayList<ControlPoint>();
     }
     
   } // end of ResolveBoundary method
@@ -384,8 +384,8 @@ class CollisionSolver {
     if (Npp>0) {
       // resolve point-point
       for (int j = 0; j<Npp; j++) {
-        Particle pi = PointACol.get(j);
-        Particle pj = PointBCol.get(j);
+        ControlPoint pi = PointACol.get(j);
+        ControlPoint pj = PointBCol.get(j);
         float piMass = pi.mass;
         float pjMass = pj.mass;
         
@@ -400,22 +400,22 @@ class CollisionSolver {
         float yjnew = pj.positionOld.y + dtRatio*(pj.position.y-pj.positionOld.y);
         
         if ((!pi.fixed) && (!pj.fixed)) {
-          pi.updateVelocity(Vxi, Vyi);
-          pj.updateVelocity(Vxj, Vyj);
-          pi.updatePosition(xinew,yinew);
-          pj.updatePosition(xjnew,yjnew);
+          pi.UpdateVelocity(Vxi, Vyi);
+          pj.UpdateVelocity(Vxj, Vyj);
+          pi.UpdatePosition(xinew,yinew);
+          pj.UpdatePosition(xjnew,yjnew);
         }
         else if ((pi.fixed) && (!pj.fixed)) {
-          pj.updateVelocity((-1)*pj.velocity.x,(-1)*pj.velocity.y);
-          pj.updatePosition(xjnew,yjnew);
+          pj.UpdateVelocity((-1)*pj.velocity.x,(-1)*pj.velocity.y);
+          pj.UpdatePosition(xjnew,yjnew);
         }
         else if ((!pi.fixed) && (pj.fixed)) {
-          pi.updateVelocity((-1)*pi.velocity.x,(-1)*pi.velocity.y);
-          pi.updatePosition(xinew,yinew);
+          pi.UpdateVelocity((-1)*pi.velocity.x,(-1)*pi.velocity.y);
+          pi.UpdatePosition(xinew,yinew);
         }
       }
-      PointACol = new ArrayList<Particle>();
-      PointBCol = new ArrayList<Particle>();
+      PointACol = new ArrayList<ControlPoint>();
+      PointBCol = new ArrayList<ControlPoint>();
     }
     
   } // end ResolvePointPoint method
@@ -430,7 +430,7 @@ class CollisionSolver {
     if (Npe>0) {
       // resolve point-edge
       for (int j = 0; j<Npe; j++) {
-        Particle p = PointCol.get(j);
+        ControlPoint p = PointCol.get(j);
         Spring s = SpringCol.get(j);
         t = TimeCol.get(j);
         l = LenCol.get(j);
@@ -452,18 +452,18 @@ class CollisionSolver {
           float yjnew = s.p2.positionOld.y + dtRatio*(s.p2.position.y-s.p2.positionOld.y);
           
           if ((!p.fixed) && (!s.p2.fixed)) {
-            p.updateVelocity(Vxi, Vyi);
-            s.p2.updateVelocity(Vxj, Vyj);
-            p.updatePosition(xinew,yinew);
-            s.p2.updatePosition(xjnew,yjnew);
+            p.UpdateVelocity(Vxi, Vyi);
+            s.p2.UpdateVelocity(Vxj, Vyj);
+            p.UpdatePosition(xinew,yinew);
+            s.p2.UpdatePosition(xjnew,yjnew);
           }
           else if ((p.fixed) && (!s.p2.fixed)) {
-            s.p2.updateVelocity((-1)*s.p2.velocity.x,(-1)*s.p2.velocity.y);
-            s.p2.updatePosition(xjnew,yjnew);
+            s.p2.UpdateVelocity((-1)*s.p2.velocity.x,(-1)*s.p2.velocity.y);
+            s.p2.UpdatePosition(xjnew,yjnew);
           }
           else if ((!p.fixed) && (s.p2.fixed)) {
-            p.updateVelocity((-1)*p.velocity.x,(-1)*p.velocity.y);
-            p.updatePosition(xinew,yinew);
+            p.UpdateVelocity((-1)*p.velocity.x,(-1)*p.velocity.y);
+            p.UpdatePosition(xinew,yinew);
           }
         }
         else if (l<0.5) {
@@ -482,22 +482,22 @@ class CollisionSolver {
           float yjnew = s.p1.positionOld.y + dtRatio*(s.p1.position.y-s.p1.positionOld.y);
           
           if ((!p.fixed) && (!s.p1.fixed)) {
-            p.updateVelocity(Vxi, Vyi);
-            s.p1.updateVelocity(Vxj, Vyj);
-            p.updatePosition(xinew,yinew);
-            s.p1.updatePosition(xjnew,yjnew);
+            p.UpdateVelocity(Vxi, Vyi);
+            s.p1.UpdateVelocity(Vxj, Vyj);
+            p.UpdatePosition(xinew,yinew);
+            s.p1.UpdatePosition(xjnew,yjnew);
           }
           else if ((p.fixed) && (!s.p1.fixed)) {
-            s.p1.updateVelocity((-1)*s.p1.velocity.x,(-1)*s.p1.velocity.y);
-            s.p1.updatePosition(xjnew,yjnew);
+            s.p1.UpdateVelocity((-1)*s.p1.velocity.x,(-1)*s.p1.velocity.y);
+            s.p1.UpdatePosition(xjnew,yjnew);
           }
           else if ((!p.fixed) && (s.p1.fixed)) {
-            p.updateVelocity((-1)*p.velocity.x,(-1)*p.velocity.y);
-            p.updatePosition(xinew,yinew);
+            p.UpdateVelocity((-1)*p.velocity.x,(-1)*p.velocity.y);
+            p.UpdatePosition(xinew,yinew);
           }
         }
       }
-      PointCol = new ArrayList<Particle>();
+      PointCol = new ArrayList<ControlPoint>();
       SpringCol = new ArrayList<Spring>();
       TimeCol = new FloatList();
       LenCol = new FloatList();
