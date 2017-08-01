@@ -97,23 +97,15 @@ class FlexibleSheet extends LineSegBody {
     for (int i=0; i<numOfpoints; i++) pf[i] = new PVector(0, 0);
     
     for ( int s=-1; s<=1; s+=2 ) {
-      float pdl = p.linear( cpoints[0].position.x+0.5*s*thk*orth[0].nx, cpoints[0].position.y+0.5*s*thk*orth[0].ny )*orth[0].l;
-      PVector pTemp = new PVector(s*pdl*orth[0].nx, s*pdl*orth[0].ny);
-      pf[0].add(pTemp);
       
-      for ( int j=1; j<orthSize; j++ ) {
-        float pdl1 = p.linear( cpoints[j-1].position.x+0.5*s*thk*orth[j-1].nx, cpoints[j-1].position.y+0.5*s*thk*orth[j-1].ny )*orth[j-1].l;
-        float pdl2 = p.linear( cpoints[j].position.x+0.5*s*thk*orth[j].nx, cpoints[j].position.y+0.5*s*thk*orth[j].ny )*orth[j].l;
-        PVector pTemp1 = new PVector(s*pdl1*orth[j-1].nx, s*pdl1*orth[j-1].ny);
-        PVector pTemp2 = new PVector(s*pdl2*orth[j].nx, s*pdl2*orth[j].ny);
-        pTemp1.add(pTemp2);
-        pTemp1.div(2);
-        pf[j].add(pTemp1);
+      for ( int j=0; j<orthSize; j++ ) {
+        float pdl = p.linear( cpoints[j].position.x+0.5*s*thk*orth[j].nx, cpoints[j].position.y+0.5*s*thk*orth[j].ny )*orth[j].l;
+        PVector pTemp = new PVector(s*pdl*orth[j].nx, s*pdl*orth[j].ny);
+        pf[j].add(pTemp);
+        pf[j+1].add(pTemp);
       }
-      pdl = p.linear( cpoints[numOfpoints-1].position.x+0.5*s*thk*orth[orthSize-1].nx, cpoints[numOfpoints-1].position.y+0.5*s*thk*orth[orthSize-1].ny )*orth[orthSize-1].l;
-      pTemp = new PVector(s*pdl*orth[orthSize-1].nx, s*pdl*orth[orthSize-1].ny);
-      pf[numOfpoints-1].add(pTemp);
     }
+    for (int j=1; j<numOfpoints-1; j++) pf[j].div(2);
     return pf;
   }
   
