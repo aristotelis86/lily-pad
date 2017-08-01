@@ -42,7 +42,7 @@ class CollisionSolver {
     LocalMass = new ControlPoint[N];
     LocalSpring = new Spring[Ns];
     
-    LocalMass = FSheet.prtcl;
+    LocalMass = FSheet.cpoints;
     LocalSpring = FSheet.springs;
     
     NBoundPointCol = new ArrayList<ControlPoint>();
@@ -78,7 +78,7 @@ class CollisionSolver {
     
     for (int j = 0; j < NFil; j++) {
       for (int i = 0; i < NMass[j]; i++) {
-        ListMass.add(filament_[j].prtcl[i]);
+        ListMass.add(filament_[j].cpoints[i]);
       }
     }
     for (int j = 0; j < NFil; j++) {
@@ -182,7 +182,7 @@ class CollisionSolver {
         
         clearRad = (pi.thick + pj.thick)/6;
         
-        if (pi.distance2point(pj)<=clearRad) {
+        if (pi.position.dist(pj.position)<=clearRad) {
           col_count += 1;
           PointACol.add(pi);
           PointBCol.add(pj);
