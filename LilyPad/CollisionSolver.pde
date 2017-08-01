@@ -146,7 +146,7 @@ class CollisionSolver {
     
     for (int i=0; i < N; i++) {
       ControlPoint P = LocalMass[i];
-      clearRad = P.diameter/2;
+      clearRad = P.thick/2;
       
       if (P.position.x < clearRad) {
         col_count += 1;
@@ -180,7 +180,7 @@ class CollisionSolver {
       for (int j = i+1; j < N; j++) {
         ControlPoint pj = LocalMass[j];
         
-        clearRad = (pi.diameter + pj.diameter)/6;
+        clearRad = (pi.thick + pj.thick)/6;
         
         if (pi.distance2point(pj)<=clearRad) {
           col_count += 1;
@@ -340,7 +340,7 @@ class CollisionSolver {
       // Resolve north bound
       for (int j = 0; j<NBP; j++) {
         ControlPoint myP = NBoundPointCol.get(j);
-        myP.UpdatePosition(myP.position.x, myP.diameter);
+        myP.UpdatePosition(myP.position.x, myP.thick);
         myP.UpdateVelocity(myP.velocity.x, -myP.velocity.y);
       }
       NBoundPointCol = new ArrayList<ControlPoint>();
@@ -349,7 +349,7 @@ class CollisionSolver {
       // Resolve south bound
       for (int j = 0; j<SBP; j++) {
         ControlPoint myP = SBoundPointCol.get(j);
-        myP.UpdatePosition(myP.position.x, height-myP.diameter);
+        myP.UpdatePosition(myP.position.x, height-myP.thick);
         myP.UpdateVelocity(myP.velocity.x, -myP.velocity.y);
       }
       SBoundPointCol = new ArrayList<ControlPoint>();
@@ -358,7 +358,7 @@ class CollisionSolver {
       // Resolve west bound
       for (int j = 0; j<WBP; j++) {
         ControlPoint myP = WBoundPointCol.get(j);
-        myP.UpdatePosition(myP.diameter, myP.position.y);
+        myP.UpdatePosition(myP.thick, myP.position.y);
         myP.UpdateVelocity(-myP.velocity.x, myP.velocity.y);
       }
       WBoundPointCol = new ArrayList<ControlPoint>();
@@ -367,7 +367,7 @@ class CollisionSolver {
       // Resolve east bound
       for (int j = 0; j<EBP; j++) {
         ControlPoint myP = EBoundPointCol.get(j);
-        myP.UpdatePosition(width-myP.diameter, myP.position.y);
+        myP.UpdatePosition(width-myP.thick, myP.position.y);
         myP.UpdateVelocity(-myP.velocity.x, myP.velocity.y);
       }
       EBoundPointCol = new ArrayList<ControlPoint>();
