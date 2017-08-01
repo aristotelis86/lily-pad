@@ -58,13 +58,13 @@ void setup() {
   
   flow = new BDIM(nx, ny, dt, sheet, 0.01, true);
   
-  PVector [] sheetPf;
+  //PVector [] sheetPf;
   
-  sheetPf = sheet.pressForcePoints ( press );
-  for (int j=0; j<sheetPf.length; j++) println(sheetPf[j]);
-  println(press.linear(sheet.cpoints[8].position.x, sheet.cpoints[8].position.y));
+  //sheetPf = sheet.pressForcePoints ( press );
+  //for (int j=0; j<sheetPf.length; j++) println(sheetPf[j]);
+  //println(press.linear(sheet.cpoints[8].position.x, sheet.cpoints[8].position.y));
   
-  plot.range = new Scale(-20,20);
+  plot.range = new Scale(-2,2);
   plot.hue = new Scale(200, 140);
   
 } // end of setup
@@ -76,8 +76,8 @@ void draw() {
   //sheet.follow();
   //updateSheet(t);
   
-  //sheet.update(dt, flow.p);
-  //sheet.update2(dt, flow.p);
+  sheet.update(dt, press);
+  sheet.update2(dt, press);
   
   //flow.update(sheet);
   //flow.update2();
