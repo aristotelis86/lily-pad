@@ -46,9 +46,10 @@ class ControlPoint {
   
   Window myWindow; // viewing window
   color c; // for displaying
+  float thick;
   
   //================= Constructor ====================//
-  ControlPoint(PVector position_, float m, Window myWindow_) {
+  ControlPoint(PVector position_, float m,  float thk, Window myWindow_) {
     position = position_;
     velocity = new PVector(0, 0);
     force = new PVector(0, 0);
@@ -58,7 +59,10 @@ class ControlPoint {
     
     myWindow = myWindow_;
     c = color(random(1,255), random(1,255), random(1,255));
+    thick = thk;
   }
+  
+  ControlPoint(PVector position_, float m, Window myWindow_) {this(position_, m,  1, myWindow_);}
   
   
   //================= Methods =====================//
