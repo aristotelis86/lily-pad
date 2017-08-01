@@ -16,7 +16,7 @@ Window view; // window in h-units
 int nx = (int)pow(2,7); // x-dir
 int ny = (int)pow(2,7); // y-dir
 
-float L = nx/4.;
+float L = nx/6.;
 float M = 1000;
 float stiff = 100;
 
@@ -28,36 +28,44 @@ float t=0;
 float dt;
 
 float sinAmp = L/5.;
-float sinN = 2.;
+float sinN = 1.;
 
 BDIM flow;
 FlexibleSheet sheet;
-//Body sheet;
+FloodPlot plot;
+Field press;
 
 void setup() {
   size(500, 500);
   view = new Window(nx, ny);
   
   sheet = new FlexibleSheet(L, M, stiff, xpos, ypos, align, view);
+  plot = new FloodPlot(view); // standard window
   
-  //// Create the distortion
-  int nn = sheet.cpoints.length;
-  //float [] x = new float[nn];
-  //float [] y = new float[nn];
+  press = new Field(nx, ny, 0, 5);
+  for( int i=0; i<nx; i++){
+  for( int j=0; j<ny; j++){
+    press.a[i][j] = 24.*(0.5-j/(float)(ny-1));
+    //press.a[i][j] = 24.*(0.5-i/(float)(nx-1));
+  }}
   
-  //x[0] = xpos;
-  //y[0] = ypos;
-  //for (int i = 1; i < nn; i++) {
-  //  x[i] = (L/(nn-1)) + x[i-1];
-  //  y[i] = sinAmp * sin(sinN*PI*(x[i]-xpos)/L) + ypos;
-  //}
-  //sheet.UpdateState(x, y);
+  // Create the distortion
   sheet.cpoints[0].makeFixed();
+  //int nn = sheet.cpoints.length;
   //sheet.cpoints[nn-1].makeFixed();
   
   dt = sheet.dtmax;
   
   flow = new BDIM(nx, ny, dt, sheet, 0.01, true);
+  
+  PVector [] sheetPf;
+  
+  sheetPf = sheet.pressForcePoints ( press );
+  for (int j=0; j<sheetPf.length; j++) println(sheetPf[j]);
+  println(press.linear(sheet.cpoints[8].position.x, sheet.cpoints[8].position.y));
+  
+  plot.range = new Scale(-20,20);
+  plot.hue = new Scale(200, 140);
   
 } // end of setup
 
@@ -66,13 +74,17 @@ void draw() {
   
   //if (t<3) sheet.move();
   //sheet.follow();
-  sheet.update(dt, flow.p);
-  sheet.update2(dt, flow.p);
   //updateSheet(t);
-  flow.update(sheet);
-  flow.update2();
   
-  flow.u.curl().display(-0.5,0.5);
+  //sheet.update(dt, flow.p);
+  //sheet.update2(dt, flow.p);
+  
+  //flow.update(sheet);
+  //flow.update2();
+  
+  //flow.u.curl().display(-0.5,0.5);
+  //plot.display(flow.p);
+  plot.display(press);
   sheet.display();
 
   t += dt;
