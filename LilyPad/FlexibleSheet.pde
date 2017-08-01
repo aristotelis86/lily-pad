@@ -41,7 +41,7 @@ class FlexibleSheet extends LineSegBody {
     cpoints = new ControlPoint[numOfpoints];
     springs = new Spring[numOfsprings];
     
-    for (int i = 0; i < numOfpoints; i++) cpoints[i] = new ControlPoint(this.coords.get(i), pointMass, window);
+    for (int i = 0; i < numOfpoints; i++) cpoints[i] = new ControlPoint(this.coords.get(i), pointMass, thk, window);
     for (int i = 0; i < numOfsprings; i++) springs[i] = new Spring( cpoints[i], cpoints[i+1], segLength, stiffness, damping, window);
     
     dtmax = Determine_time_step();
