@@ -168,6 +168,7 @@ class FlexibleSheet extends LineSegBody {
     getOrth();
     getBox();
   }
+  
   // Get current positions and velocities
   void getState() {
     for(int i=0; i<numOfpoints; i++) {
