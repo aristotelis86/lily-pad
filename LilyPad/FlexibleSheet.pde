@@ -109,6 +109,16 @@ class FlexibleSheet extends LineSegBody {
     return pf;
   }
   
+  // calculate the pressure force at each point
+  PVector [] stressForcePoints ( VectorField u ) {
+    
+    int orthSize = orth.length;
+    PVector [] ps = new PVector[numOfpoints];
+    for (int i=0; i<numOfpoints; i++) ps[i] = new PVector(0, 0);
+    
+    return ps;
+  }
+  
   // Calculate damping coefficient for numerical purposes
   float Determine_damping() {
     float d = sqrt(stiffness*pointMass);
