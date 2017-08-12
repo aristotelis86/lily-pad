@@ -101,8 +101,8 @@ class FlexibleSheet extends LineSegBody {
       for ( int j=0; j<orthSize; j++ ) {
         float pdl = p.linear( cpoints[j].position.x+0.5*s*thk*orth[j].nx, cpoints[j].position.y+0.5*s*thk*orth[j].ny )*orth[j].l;
         PVector pTemp = new PVector(s*pdl*orth[j].nx, s*pdl*orth[j].ny);
-        pf[j].add(pTemp);
-        pf[j+1].add(pTemp);
+        pf[j].sub(pTemp);
+        pf[j+1].sub(pTemp);
       }
     }
     for (int j=1; j<numOfpoints-1; j++) pf[j].div(2);
