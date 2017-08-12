@@ -67,6 +67,11 @@ void setup() {
   plot.range = new Scale(-2,2);
   plot.hue = new Scale(200, 140);
   
+  //println(press.a[38][65]);
+  //PVector [] printForce;
+  //printForce = sheet.pressForcePoints(press);
+  //for (int i=0; i<nx/6; i++) println(printForce[i]);
+  
 } // end of setup
 
 
@@ -76,15 +81,17 @@ void draw() {
   //sheet.follow();
   //updateSheet(t);
   
-  sheet.update(dt, press);
-  sheet.update2(dt, press);
+  //sheet.update(dt, press);
+  //sheet.update2(dt, press);
+  sheet.update(dt, flow.p);
+  sheet.update2(dt, flow.p);
   
-  //flow.update(sheet);
-  //flow.update2();
+  flow.update(sheet);
+  flow.update2();
   
   //flow.u.curl().display(-0.5,0.5);
-  //plot.display(flow.p);
-  plot.display(press);
+  plot.display(flow.p);
+  //plot.display(press);
   sheet.display();
 
   t += dt;
