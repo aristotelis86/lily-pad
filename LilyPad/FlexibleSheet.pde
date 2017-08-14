@@ -189,25 +189,6 @@ class FlexibleSheet extends LineSegBody {
     }
   }
   
-  // make the bounding box
-  void getBox() {
-    int n = coords.size(); 
-    if (n>4) {
-      PVector mn = xc.copy(), mx = xc.copy();
-      for ( PVector x: coords ) {
-        mn.x = min(mn.x, x.x);
-        mn.y = min(mn.y, x.y);
-        mx.x = max(mx.x, x.x);
-        mx.y = max(mx.y, x.y);
-      }
-      box = new Body(xc.x, xc.y, window);
-      box.add(mn.x, mn.y);
-      box.add(mn.x, mx.y);
-      box.add(mx.x, mx.y);
-      box.add(mx.x, mn.y);
-      box.end();
-    }
-  }
   
   // Trapezoid (Predictor-Corrector) Scheme
   void update(float dt, Field p) {
