@@ -43,6 +43,8 @@ class ControlPoint {
   PVector force; // force acting on the point-mass
   float mass; // mass of the point
   boolean fixed; // fix the particle at its location
+  boolean xfixed; // fix the particle at its y-axis
+  boolean yfixed; // fix the particle at its x-ayis
   
   Window myWindow; // viewing window
   color c; // for displaying
@@ -56,6 +58,8 @@ class ControlPoint {
     mass = m;
     
     fixed = false;
+    xfixed = false;
+    yfixed = false;
     
     myWindow = myWindow_;
     c = color(random(1,255), random(1,255), random(1,255));
@@ -87,12 +91,26 @@ class ControlPoint {
   // Make the particle free of constraints
   void makeFree() {
     fixed = false;
+    xfixed = false;
+    yfixed = false;
   }
+  
+  void makeFreex() { xfixed = false; }
+  void makeFreey() { yfixed = false; }
   
   // Constrain the particle at its location
   void makeFixed() {
     fixed = true;
+    xfixed = true;
+    yfixed = true;
   }
+  
+  // Constrain the particle at its y-axis
+  void makeFixedx() { xfixed = true; }
+  
+  // Constrain the particle at its x-axis
+  void makeFixedy() { yfixed = true; }
+  
   
   // Get the distance between control points
   float distance(ControlPoint other) {
