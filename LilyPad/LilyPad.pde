@@ -17,8 +17,8 @@ int nx = (int)pow(2,7); // x-dir
 int ny = (int)pow(2,7); // y-dir
 
 float L = nx/6.;
-float M = 1000;
-float stiff = 100;
+float M = 100;
+float stiff = 50;
 
 float xpos = nx/4.;
 float ypos = ny/2.;
@@ -36,7 +36,7 @@ FloodPlot plot;
 Field press;
 
 void setup() {
-  size(500, 500);
+  size(800, 800);
   view = new Window(nx, ny);
   
   sheet = new FlexibleSheet(L, M, stiff, xpos, ypos, align, view);
