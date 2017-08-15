@@ -110,11 +110,29 @@ class FlexibleSheet extends LineSegBody {
   }
   
   // calculate the pressure force at each point
-  PVector [] stressForcePoints ( VectorField u ) {
+  PVector [] stressForcePoints ( VectorField Vel, float nu ) {
+    
+    Field u = Vel.x;
+    Field v = Vel.y;
     
     int orthSize = orth.length;
     PVector [] ps = new PVector[numOfpoints];
     for (int i=0; i<numOfpoints; i++) ps[i] = new PVector(0, 0);
+    
+    for ( int s=-1; s<=1; s+=2 ) {
+      
+      for ( int j=0; j<orthSize; j++ ) {
+        float du = u.linear( cpoints[j].position.x+0.5*s*thk*orth[j].nx, cpoints[j].position.y+0.5*s*thk*orth[j].ny );
+        float dv = v.linear( cpoints[j].position.x+0.5*s*thk*orth[j].nx, cpoints[j].position.y+0.5*s*thk*orth[j].ny );
+        
+        PVector Temp = new PVector(s*du*orth[j].tx, s*du*orth[j].ty);
+        Temp.add(new PVector(s*dv*orth[j].tx, s*dv*orth[j].ty));
+        ps[j].sub(Temp);
+        ps[j+1].sub(Temp);
+      }
+    }
+    for (int j=1; j<numOfpoints-1; j++) ps[j].div(2);
+    for (int j=0; j<numOfpoints; j++) ps[j].mult(nu/thk); 
     
     return ps;
   }
