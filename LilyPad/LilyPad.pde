@@ -22,7 +22,7 @@ float stiff = 50;
 
 float xpos = nx/4.;
 float ypos = ny/2.;
-PVector align = new PVector(1, 0);
+PVector align = new PVector(1, 1);
 
 float t=0;
 float dt;
@@ -71,7 +71,8 @@ void setup() {
   //PVector [] printForce;
   //printForce = sheet.pressForcePoints(press);
   //for (int i=0; i<nx/6; i++) println(printForce[i]);
-  
+  println(sheet.orth[0].ny);
+  println(sheet.orth[0].ty);
 } // end of setup
 
 
