@@ -114,7 +114,9 @@ class FlexibleSheet extends LineSegBody {
     
     Field u = Vel.x;
     Field v = Vel.y;
-    Field grad = new Field( Vel.n, Vel.m);
+    Field wnx = new Field( Vel.n, Vel.m);
+    Field wny = new Field( Vel.n, Vel.m);
+    VectorField VelGrad;
     
     int orthSize = orth.length;
     PVector [] ps = new PVector[numOfpoints];
