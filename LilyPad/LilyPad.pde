@@ -12,17 +12,20 @@ can only have one setup & run at a time.
 
 *********************************************************/
 
-Window view; // window in h-units
+Window view, view2; // window in h-units
+
+boolean saveimg = true;
+
 int nx = (int)pow(2,7); // x-dir
 int ny = (int)pow(2,7); // y-dir
 
 float L = nx/6.;
 float M = 100;
-float stiff = 50;
+float stiff = 20;
 
 float xpos = nx/4.;
 float ypos = ny/2.;
-PVector align = new PVector(1, 1);
+PVector align = new PVector(1, 0);
 
 float t=0;
 float dt;
@@ -30,72 +33,71 @@ float dt;
 float sinAmp = L/5.;
 float sinN = 1.;
 
-BDIM flow;
-FlexibleSheet sheet;
-FloodPlot plot;
-Field press;
+BDIM flow, flow2;
+FlexibleSheet sheet,sheet2;
+FloodPlot plot, plot2;
+
 
 void setup() {
-  size(800, 800);
-  view = new Window(nx, ny);
+  size(800, 600);
+  //view = new Window(nx, ny);
+  view = new Window( 1, 1, nx, ny, 0, 0, 800, 300);
+  view2 = new Window( 1, 1, nx, ny, 0, 300, 800, 300);
+  
   
   sheet = new FlexibleSheet(L, M, stiff, xpos, ypos, align, view);
+  sheet2 = new FlexibleSheet(L, M, stiff, xpos, ypos, align, view2);
+  
   plot = new FloodPlot(view); // standard window
+  plot2 = new FloodPlot(view2); // standard window
   
-  press = new Field(nx, ny, 0, 5);
-  for( int i=0; i<nx; i++){
-  for( int j=0; j<ny; j++){
-    press.a[i][j] = 24.*(0.5-j/(float)(ny-1));
-    //press.a[i][j] = 24.*(0.5-i/(float)(nx-1));
-  }}
-  
-  // Create the distortion
   sheet.cpoints[0].makeFixed();
-  //int nn = sheet.cpoints.length;
-  //sheet.cpoints[nn-1].makeFixed();
+  sheet2.cpoints[0].makeFixed();
   
   dt = sheet.dtmax;
   
   flow = new BDIM(nx, ny, dt, sheet, 0.01, true);
+  flow2 = new BDIM(nx, ny, dt, sheet2, 0.01, true);
   
-  //PVector [] sheetPf;
+  plot.range = new Scale(-1,1);
+  plot.hue = new Scale(100, 40);
+  plot.setLegend("pressure");
   
-  //sheetPf = sheet.pressForcePoints ( press );
-  //for (int j=0; j<sheetPf.length; j++) println(sheetPf[j]);
-  //println(press.linear(sheet.cpoints[8].position.x, sheet.cpoints[8].position.y));
+  plot2.range = new Scale(-1,1);
+  plot2.hue = new Scale(5, 220);
+  plot2.setLegend("vorticity");
   
-  plot.range = new Scale(-2,2);
-  plot.hue = new Scale(200, 140);
-  
-  //println(press.a[38][65]);
-  //PVector [] printForce;
-  //printForce = sheet.pressForcePoints(press);
-  //for (int i=0; i<nx/6; i++) println(printForce[i]);
-  println(sheet.orth[0].ny);
-  println(sheet.orth[0].ty);
 } // end of setup
 
 
 void draw() {
   
-  //if (t<3) sheet.move();
-  //sheet.follow();
-  //updateSheet(t);
-  
-  //sheet.update(dt, press);
-  //sheet.update2(dt, press);
-  sheet.update(dt, flow.p);
-  sheet.update2(dt, flow.p);
+  sheet.update(dt, flow);
+  sheet.update2(dt, flow);
   
   flow.update(sheet);
   flow.update2();
   
   //flow.u.curl().display(-0.5,0.5);
   plot.display(flow.p);
-  //plot.display(press);
+  
   sheet.display();
+  // -------------------- // 
+  sheet2.update(dt, flow2);
+  sheet2.update2(dt, flow2);
+  
+  flow2.update(sheet2);
+  flow2.update2();
+  
+  //flow.u.curl().display(-0.5,0.5);
+  plot2.display(flow2.u.curl());
+  
+  sheet2.display();
 
   t += dt;
+  
+  if (saveimg) saveFrame("movie/frame_######.png");
+  
   //noLoop();
 }
 void mousePressed(){sheet.mousePressed();}    // user mouse...
