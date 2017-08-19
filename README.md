@@ -9,3 +9,6 @@
 * Help with [non-dimensionalization](https://github.com/weymouth/lily-pad/wiki/non-dimensional) can also be handy.
 
 ![LilyPad](http://weymouth.github.io/img/streakgreen2013Apr10.jpg)
+
+
+Some cool videos on [Flexible Sheets](https://www.youtube.com/playlist?list=PLvd31TJkHlQySfIbLF30tkbuxrs6WBnVS)
