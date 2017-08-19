@@ -106,17 +106,15 @@ class FlexibleSheet extends LineSegBody {
       }
     }
     for (int j=1; j<numOfpoints-1; j++) pf[j].div(2);
+    
     return pf;
   }
   
   // calculate the pressure force at each point
   PVector [] stressForcePoints ( VectorField Vel, float nu ) {
     
-    Field u = Vel.x;
-    Field v = Vel.y;
-    Field wnx = new Field( Vel.n, Vel.m);
-    Field wny = new Field( Vel.n, Vel.m);
-    VectorField VelGrad;
+    Field omega = Vel.curl();
+    
     
     int orthSize = orth.length;
     PVector [] ps = new PVector[numOfpoints];
@@ -124,9 +122,14 @@ class FlexibleSheet extends LineSegBody {
     
     for ( int s=-1; s<=1; s+=2 ) {
       for ( int j=0; j<orthSize; j++ ) {
-        
+        float omegaZVal = omega.linear( cpoints[j].position.x+0.5*s*thk*orth[j].nx, cpoints[j].position.y+0.5*s*thk*orth[j].ny );
+        PVector pTemp = new PVector(s*omegaZVal*orth[j].ny, s*omegaZVal*orth[j].nx);
+        ps[j].add(pTemp);
+        ps[j+1].add(pTemp);
       }
     }
+    for (int j=1; j<numOfpoints-1; j++) ps[j].div(2);
+    for (int j=0; j<numOfpoints; j++) ps[j].mult(nu);
     
     return ps;
   }
@@ -203,7 +206,7 @@ class FlexibleSheet extends LineSegBody {
   
   
   // Trapezoid (Predictor-Corrector) Scheme
-  void update(float dt, Field p) {
+  void update(float dt, BDIM flow) {
     
     if (dt>dtmax) {
       println("WARNING dt constrained to maximum permitted:"+dtmax);
@@ -211,11 +214,13 @@ class FlexibleSheet extends LineSegBody {
     }
     
     int N = numOfpoints;
-    PVector [] ExtForce = new PVector[N];
+    PVector [] pressForce = new PVector[N];
+    PVector [] stressForce = new PVector[N];
     float pMass = pointMass;
     
     getState();
-    ExtForce = pressForcePoints ( p );
+    pressForce = pressForcePoints ( flow.p );
+    stressForce = stressForcePoints( flow.u, flow.nu );
   
     // Apply Forces for this step
     ApplyAllForces();
@@ -227,9 +232,11 @@ class FlexibleSheet extends LineSegBody {
     }
     // accumulate any acceleration due to external forces
     for (int i = 0; i < N; i++) {
-      PVector ext = ExtForce[i].copy();
-      ext.div(pMass);
-      accelCurrent[i].add(ext);
+      PVector ext1 = pressForce[i].copy();
+      PVector ext2 = stressForce[i].copy();
+      ext1.add(ext2);
+      ext1.div(pMass);
+      accelCurrent[i].add(ext1);
     }
     
     // Calculate estimation
@@ -252,7 +259,7 @@ class FlexibleSheet extends LineSegBody {
   } // end of update (prediction)
   
   
-  void update2(float dt, Field p) {
+  void update2(float dt, BDIM flow) {
     
     if (dt>dtmax) {
       println("WARNING dt constrained to maximum permitted:"+dtmax);
@@ -260,10 +267,12 @@ class FlexibleSheet extends LineSegBody {
     }
     
     int N = numOfpoints;
-    PVector [] ExtForce = new PVector[N];
+    PVector [] pressForce = new PVector[N];
+    PVector [] stressForce = new PVector[N];
     float pMass = pointMass;
     
-    ExtForce = pressForcePoints ( p );
+    pressForce = pressForcePoints ( flow.p );
+    stressForce = stressForcePoints( flow.u, flow.nu );
     
     // Apply Forces for the correction
     ApplyAllForces();
@@ -275,9 +284,11 @@ class FlexibleSheet extends LineSegBody {
     }
     // accumulate any acceleration due to external forces
     for (int i = 0; i < N; i++) {
-      PVector ext = ExtForce[i].copy();
-      ext.div(pMass);
-      accelPred[i].add(ext);
+      PVector ext1 = pressForce[i].copy();
+      PVector ext2 = stressForce[i].copy();
+      ext1.add(ext2);
+      ext1.div(pMass);
+      accelPred[i].add(ext1);
     }
     
     // Calculate at the new state
