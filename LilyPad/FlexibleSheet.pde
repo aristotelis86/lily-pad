@@ -84,10 +84,39 @@ class FlexibleSheet extends LineSegBody {
     else return sumVel/sumWeights;
   }
   
-  // compute body reaction to applied force 
-  void react (PVector [] extForce, float dt) {
-    
+  // Move for testing purposes
+  void move() {
+    for (ControlPoint cp : cpoints) {
+      cp.velocity = new PVector(0.1, .2);
+      cp.position.add( cp.velocity );
+    }
+    getOrth();
   }
+  
+  // Prescribed motion of the sheet to test effect on flow
+  void updateSheet(float t) {
+    
+    float sinAmp = L/5.;
+    float sinN = 1.;
+  
+    int nn = cpoints.length;
+    float [] x = new float[nn];
+    float [] y = new float[nn];
+    float [] vx = new float[nn];
+    float [] vy = new float[nn];
+    
+    x[0] = cpoints[0].position.x;
+    y[0] = cpoints[0].position.y;
+    vx[0] = 0.;
+    vy[0] = 0.;
+    for (int i = 1; i < nn; i++) {
+      x[i] = (L/(nn-1)) + x[i-1];
+      y[i] = (sinAmp * sin(sinN*PI*(x[i]-xpos)/L))*sin(2*t) + ypos;
+      vx[i] = 0.;
+      vy[i] = 2*cos(2*t)*(sinAmp * sin(sinN*PI*(x[i]-xpos)/L));
+    }
+    UpdateState(x, y, vx, vy);
+  }  
   
   // calculate the pressure force at each point
   PVector [] pressForcePoints ( Field p ) {
@@ -161,14 +190,6 @@ class FlexibleSheet extends LineSegBody {
     return dt;
   }
   
-  // Move for testing purposes
-  void move() {
-    for (ControlPoint cp : cpoints) {
-      cp.velocity = new PVector(0.1, .2);
-      cp.position.add( cp.velocity );
-    }
-    getOrth();
-  }
   
   // Apply internal Forces to particles
   void ApplyAllForces() {
