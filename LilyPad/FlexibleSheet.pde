@@ -186,7 +186,7 @@ class FlexibleSheet extends LineSegBody {
   // Prescribed motion of the sheet to test effect on flow
   void updateSheet(float t) {
     
-    float sinAmp = L/5.;
+    float sinAmp = Length/5.;
     float sinN = 1.;
   
     int nn = cpoints.length;
@@ -200,10 +200,10 @@ class FlexibleSheet extends LineSegBody {
     vx[0] = 0.;
     vy[0] = 0.;
     for (int i = 1; i < nn; i++) {
-      x[i] = (L/(nn-1)) + x[i-1];
-      y[i] = (sinAmp * sin(sinN*PI*(x[i]-xpos)/L))*sin(2*t) + ypos;
+      x[i] = (Length/(nn-1)) + x[i-1];
+      y[i] = (sinAmp * sin(sinN*PI*(x[i]-x[0])/Length))*sin(2*t) + y[0];
       vx[i] = 0.;
-      vy[i] = 2*cos(2*t)*(sinAmp * sin(sinN*PI*(x[i]-xpos)/L));
+      vy[i] = 2*cos(2*t)*(sinAmp * sin(sinN*PI*(x[i]-x[0])/Length));
     }
     UpdateState(x, y, vx, vy);
   }  
@@ -420,5 +420,205 @@ class FlexibleSheet extends LineSegBody {
     // Update the state of the filament for the correction
     UpdateState(xnew, ynew, vxnew, vynew);
   } // end of Trapezoid
+  
+  // ****************************************************************** //
+  // Trapezoid (Predictor-Corrector) Scheme
+  void update(float dt, VectorField Vel, float nu ) {
+    
+    if (dt>dtmax) {
+      println("WARNING dt constrained to maximum permitted:"+dtmax);
+      dt = dtmax;
+    }
+    
+    int N = numOfpoints;
+    PVector [] stressForce = new PVector[N];
+    float pMass = pointMass;
+    
+    getState();
+    stressForce = stressForcePoints( Vel, nu );
+    println(stressForce[N-1]);
+  
+    // Apply Forces for this step
+    ApplyAllForces();
+    
+    // calculate acceleration
+    for (int i = 0; i < N; i++) {
+      accelCurrent[i] = cpoints[i].force.copy();
+      accelCurrent[i].div(pMass);
+    }
+    // accumulate any acceleration due to external forces
+    for (int i = 0; i < N; i++) {
+      
+      PVector ext = stressForce[i].copy();
+      ext.div(pMass);
+      accelCurrent[i].add(ext);
+    }
+    
+    // Calculate estimation
+    for (int i = 0; i < N; i++) {
+      if (!cpoints[i].fixed) {
+        xPred[i] = xcurrent[i] + dt*vxcurrent[i];
+        yPred[i] = ycurrent[i] + dt*vycurrent[i];
+        vxPred[i] = vxcurrent[i] + dt*accelCurrent[i].x;
+        vyPred[i] = vycurrent[i] + dt*accelCurrent[i].y;
+      }
+      else {
+        xPred[i] = xcurrent[i];
+        yPred[i] = ycurrent[i];
+        vxPred[i] = vxcurrent[i];
+        vyPred[i] = vycurrent[i];
+      }
+    }
+    // Update the state of the filament for the correction
+    UpdateState(xPred, yPred, vxPred, vyPred);
+  } // end of update (prediction)
+  
+  
+  void update2(float dt, VectorField Vel, float nu ) {
+    
+    if (dt>dtmax) {
+      println("WARNING dt constrained to maximum permitted:"+dtmax);
+      dt = dtmax;
+    }
+    
+    int N = numOfpoints;
+    PVector [] stressForce = new PVector[N];
+    float pMass = pointMass;
+    
+    stressForce = stressForcePoints( Vel, nu );
+    
+    // Apply Forces for the correction
+    ApplyAllForces();
+    
+    // calculate acceleration for the correction
+    for (int i = 0; i < N; i++) {
+      accelPred[i] = cpoints[i].force.copy();
+      accelPred[i].div(pMass);
+    }
+    // accumulate any acceleration due to external forces
+    for (int i = 0; i < N; i++) {
+      PVector ext = stressForce[i].copy();
+      ext.div(pMass);
+      accelPred[i].add(ext);
+    }
+    
+    // Calculate at the new state
+    for (int i = 0; i < N; i++) {
+      if (!cpoints[i].fixed) {
+        xnew[i] = xcurrent[i] + 0.5*dt*(vxcurrent[i]+vxPred[i]);
+        ynew[i] = ycurrent[i] + 0.5*dt*(vycurrent[i]+vyPred[i]);
+        vxnew[i] = vxcurrent[i] + 0.5*dt*(accelCurrent[i].x+accelPred[i].x);
+        vynew[i] = vycurrent[i] + 0.5*dt*(accelCurrent[i].y+accelPred[i].y);
+      }
+      else {
+        xnew[i] = xcurrent[i];
+        ynew[i] = ycurrent[i];
+        vxnew[i] = vxcurrent[i];
+        vynew[i] = vycurrent[i];
+      }
+    }
+    // Update the state of the filament for the correction
+    UpdateState(xnew, ynew, vxnew, vynew);
+  } // end of Trapezoid
+  
+  // *************************************************************** //
+  
+  // Trapezoid (Predictor-Corrector) Scheme
+  void update(float dt, Field p) {
+    
+    if (dt>dtmax) {
+      println("WARNING dt constrained to maximum permitted:"+dtmax);
+      dt = dtmax;
+    }
+    
+    int N = numOfpoints;
+    PVector [] pressForce = new PVector[N];
+    float pMass = pointMass;
+    
+    getState();
+    pressForce = pressForcePoints ( p );
+    
+    // Apply Forces for this step
+    ApplyAllForces();
+    
+    // calculate acceleration
+    for (int i = 0; i < N; i++) {
+      accelCurrent[i] = cpoints[i].force.copy();
+      accelCurrent[i].div(pMass);
+    }
+    // accumulate any acceleration due to external forces
+    for (int i = 0; i < N; i++) {
+      PVector ext1 = pressForce[i].copy();
+      ext1.div(pMass);
+      accelCurrent[i].add(ext1);
+    }
+    
+    // Calculate estimation
+    for (int i = 0; i < N; i++) {
+      if (!cpoints[i].fixed) {
+        xPred[i] = xcurrent[i] + dt*vxcurrent[i];
+        yPred[i] = ycurrent[i] + dt*vycurrent[i];
+        vxPred[i] = vxcurrent[i] + dt*accelCurrent[i].x;
+        vyPred[i] = vycurrent[i] + dt*accelCurrent[i].y;
+      }
+      else {
+        xPred[i] = xcurrent[i];
+        yPred[i] = ycurrent[i];
+        vxPred[i] = vxcurrent[i];
+        vyPred[i] = vycurrent[i];
+      }
+    }
+    // Update the state of the filament for the correction
+    UpdateState(xPred, yPred, vxPred, vyPred);
+  } // end of update (prediction)
+  
+  
+  void update2(float dt, Field p) {
+    
+    if (dt>dtmax) {
+      println("WARNING dt constrained to maximum permitted:"+dtmax);
+      dt = dtmax;
+    }
+    
+    int N = numOfpoints;
+    PVector [] pressForce = new PVector[N];
+    float pMass = pointMass;
+    
+    pressForce = pressForcePoints ( p );
+    
+    // Apply Forces for the correction
+    ApplyAllForces();
+    
+    // calculate acceleration for the correction
+    for (int i = 0; i < N; i++) {
+      accelPred[i] = cpoints[i].force.copy();
+      accelPred[i].div(pMass);
+    }
+    // accumulate any acceleration due to external forces
+    for (int i = 0; i < N; i++) {
+      PVector ext1 = pressForce[i].copy();
+      ext1.div(pMass);
+      accelPred[i].add(ext1);
+    }
+    
+    // Calculate at the new state
+    for (int i = 0; i < N; i++) {
+      if (!cpoints[i].fixed) {
+        xnew[i] = xcurrent[i] + 0.5*dt*(vxcurrent[i]+vxPred[i]);
+        ynew[i] = ycurrent[i] + 0.5*dt*(vycurrent[i]+vyPred[i]);
+        vxnew[i] = vxcurrent[i] + 0.5*dt*(accelCurrent[i].x+accelPred[i].x);
+        vynew[i] = vycurrent[i] + 0.5*dt*(accelCurrent[i].y+accelPred[i].y);
+      }
+      else {
+        xnew[i] = xcurrent[i];
+        ynew[i] = ycurrent[i];
+        vxnew[i] = vxcurrent[i];
+        vynew[i] = vycurrent[i];
+      }
+    }
+    // Update the state of the filament for the correction
+    UpdateState(xnew, ynew, vxnew, vynew);
+  } // end of Trapezoid
+  
 
 } //=========== end of FlexibleSheet class ===============
