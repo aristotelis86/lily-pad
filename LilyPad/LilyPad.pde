@@ -30,8 +30,6 @@ PVector align = new PVector(1, 0);
 float t=0;
 float dt;
 
-float sinAmp = L/5.;
-float sinN = 1.;
 
 BDIM flow, flow2;
 FlexibleSheet sheet,sheet2;
@@ -103,55 +101,3 @@ void draw() {
 void mousePressed(){sheet.mousePressed();}    // user mouse...
 void mouseReleased(){sheet.mouseReleased();}  // interaction methods
 void mouseWheel(MouseEvent event){sheet.mouseWheel(event);}
-
-
-
-void updateSheet(float t) {
-  
-  int nn = sheet.cpoints.length;
-  float [] x = new float[nn];
-  float [] y = new float[nn];
-  float [] vx = new float[nn];
-  float [] vy = new float[nn];
-  
-  x[0] = xpos;
-  y[0] = ypos;
-  vx[0] = 0.;
-  vy[0] = 0.;
-  for (int i = 1; i < nn; i++) {
-    x[i] = (L/(nn-1)) + x[i-1];
-    y[i] = (sinAmp * sin(sinN*PI*(x[i]-xpos)/L))*sin(2*t) + ypos;
-    vx[i] = 0.;
-    vy[i] = 2*cos(2*t)*(sinAmp * sin(sinN*PI*(x[i]-xpos)/L));
-  }
-  sheet.UpdateState(x, y, vx, vy);
-  
-}
-
-
-
-//// Circle that can be dragged by the mouse
-//BDIM flow;
-//Body body;
-//FloodPlot flood;
-
-//void setup(){
-//  size(700,700);                             // display window size
-//  int n=(int)pow(2,7);                       // number of grid points
-//  float L = n/8.;                            // length-scale in grid units
-//  Window view = new Window(n,n);
-
-//  body = new CircleBody(n/3,n/2,L,view);     // define geom
-//  flow = new BDIM(n,n,1.5,body);             // solve for flow using BDIM
-//  flood = new FloodPlot(view);               // intialize a flood plot...
-//  flood.setLegend("vorticity",-.5,.5);       //    and its legend
-//}
-//void draw(){
-//  body.follow();                             // update the body
-//  flow.update(body); flow.update2();         // 2-step fluid update
-//  flood.display(flow.u.curl());              // compute and display vorticity
-//  body.display();                            // display the body
-//}
-//void mousePressed(){body.mousePressed();}    // user mouse...
-//void mouseReleased(){body.mouseReleased();}  // interaction methods
-//void mouseWheel(MouseEvent event){body.mouseWheel(event);}
