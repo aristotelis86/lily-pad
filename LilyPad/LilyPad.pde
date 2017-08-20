@@ -12,9 +12,10 @@ can only have one setup & run at a time.
 
 *********************************************************/
 
-Window view; // window in h-units
+Window view, view2; // window in h-units
+FloodPlot plot, plot2;
 
-boolean saveimg = false;
+boolean saveimg = true;
 
 int nx = (int)pow(2,6); // x-dir
 int ny = (int)pow(2,6); // y-dir
@@ -25,61 +26,90 @@ float M = 10;
 float stiff = 20;
 
 float xpos = nx/4.;
-float ypos = ny/2.;
+float ypos = 20;
+float ypos2 = 25;
 PVector align = new PVector(1, 0);
 
 float t=0;
 float dt;
 
 
-BDIM flow;
-FlexibleSheet sheet,sheet2;
-FloodPlot plot;
-CollisionSolver collisions;
+BDIM flow, flow2;
+BodyUnion bodies, bodies2;
+FlexibleSheet [] sheet, sheet2;
+CollisionSolver collisions, collisions2;
 
 
 void setup() {
   
   size(1080, 600);
   //view = new Window(nx, ny);
-  view = new Window( 1, 1, nx, ny, 0, 0, width, height);
+  view = new Window( 1, 1, nx, ny, 0, 0, width, height/2);
+  view2 = new Window( 1, 1, nx, ny, 0, height/2, width, height/2);
   
-  sheet = new FlexibleSheet(L, thick, M, stiff, xpos, ypos, align, view);
+  sheet = new FlexibleSheet[2];
+  sheet2 = new FlexibleSheet[2];
+  
+  sheet[0] = new FlexibleSheet(L, thick, M, stiff, xpos, ypos, align, view);
+  sheet[1] = new FlexibleSheet(L, thick, M, stiff, xpos, ypos2, align, view);
+  sheet2[0] = new FlexibleSheet(L, thick, M, stiff, xpos, ypos, align, view2);
+  sheet2[1] = new FlexibleSheet(L, thick, M, stiff, xpos, ypos2, align, view2);
   
   plot = new FloodPlot(view); // standard window
+  plot2 = new FloodPlot(view2); // standard window
   
-  sheet.cpoints[0].makeFixed(); // pinning leading point
+  //sheet[0].cpoints[0].makeFixed(); // pinning leading point
+  //sheet[1].cpoints[0].makeFixed(); // pinning leading point
+  //sheet2[0].cpoints[0].makeFixed(); // pinning leading point
+  //sheet2[1].cpoints[0].makeFixed(); // pinning leading point
   
-  dt = sheet.dtmax;
+  dt = sheet[0].dtmax;
   
-  flow = new BDIM(nx, ny, dt, sheet, 0.01, true);
+  bodies = new BodyUnion(sheet[0], sheet[1]);
+  bodies2 = new BodyUnion(sheet2[0], sheet2[1]);
+  
+  flow = new BDIM(nx, ny, dt, bodies, 0.01, true);
+  flow2 = new BDIM(nx, ny, dt, bodies2, 0.01, true);
   
   plot.range = new Scale(-1,1);
   plot.hue = new Scale(100, 40);
   plot.setLegend("pressure");
   
-  //plot.range = new Scale(-1,1);
-  //plot.hue = new Scale(5, 220);
-  //plot.setLegend("vorticity");
+  plot2.range = new Scale(-1,1);
+  plot2.hue = new Scale(5, 220);
+  plot2.setLegend("vorticity");
   
   collisions = new CollisionSolver(sheet, view);
+  collisions2 = new CollisionSolver(sheet2, view2);
   
 } // end of setup
 
 
 void draw() {
   
-  sheet.update(dt, flow);
-  sheet.update2(dt, flow);
-  collisions.SolveCollisions();
+  for (FlexibleSheet fl : sheet) {
+    fl.update(dt, flow);
+    fl.update2(dt, flow);
+  }
+  for (FlexibleSheet fl : sheet2) {
+    fl.update(dt, flow2);
+    fl.update2(dt, flow2);
+  }
   
-  flow.update(sheet);
+  collisions.SolveCollisions();
+  collisions2.SolveCollisions();
+  
+  flow.update(bodies);
   flow.update2();
   
-  plot.display(flow.p);
-  //plot.display(flow2.u.curl());
+  flow2.update(bodies2);
+  flow2.update2();
   
-  sheet.mydisplay();
+  plot.display(flow.p);
+  plot2.display(flow.u.curl());
+  
+  for (FlexibleSheet fl : sheet) fl.display();
+  for (FlexibleSheet fl : sheet2) fl.display();
   
   t += dt;
   
