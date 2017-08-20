@@ -107,14 +107,14 @@ class FlexibleSheet extends LineSegBody {
   ControlPoint [] cpoints; // stores the control points of the system
   Spring [] springs; // stores the connecting springs
   
-  FlexibleSheet( float L_, float th_, float M_, float stiffness_, float x, float y, PVector align, Window window ) {
+  FlexibleSheet( float L_, float th_, float M_, int resol, float stiffness_, float x, float y, PVector align, Window window ) {
     super(x, y, window); 
     thk = th_;
     weight = window.pdx(thk);
     
     align.normalize();
     PVector X0;
-    for ( int i=0; i < L_; i++ ) {
+    for ( int i=0; i < L_; i+=resol ) {
       X0 = PVector.add(new PVector(x,y), PVector.mult(align, i));
       super.add(X0.x, X0.y);
     }
@@ -137,10 +137,18 @@ class FlexibleSheet extends LineSegBody {
     
     dtmax = Determine_time_step();
     InitUpdateVars();
-    
   } // end of Constructor
   
+  FlexibleSheet( float L_, float th_, float M_, float stiffness_, float x, float y, PVector align, Window window ) {
+    this( L_, th_, M_, 1, stiffness_, x, y, align, window);
+  }
+  
   //============================= Methods =================================//
+  void mydisplay() {
+    for (ControlPoint cp : cpoints) cp.display();
+  }
+  
+  
   void InitUpdateVars() {
     xcurrent = new float[numOfpoints]; xPred = new float[numOfpoints]; xnew = new float[numOfpoints];
     ycurrent = new float[numOfpoints]; yPred = new float[numOfpoints]; ynew = new float[numOfpoints];
@@ -316,6 +324,13 @@ class FlexibleSheet extends LineSegBody {
     }
   }
   
+  // Store old position and velocities to control points
+  void storeOldState() {
+    for(int i=0; i<numOfpoints; i++) {
+      
+    }
+  }
+  
   
   // Trapezoid (Predictor-Corrector) Scheme
   void update(float dt, BDIM flow) {
@@ -331,6 +346,7 @@ class FlexibleSheet extends LineSegBody {
     float pMass = pointMass;
     
     getState();
+    storeOldState();
     pressForce = pressForcePoints ( flow.p );
     stressForce = stressForcePoints( flow.u, flow.nu );
   
@@ -436,6 +452,7 @@ class FlexibleSheet extends LineSegBody {
     float pMass = pointMass;
     
     getState();
+    storeOldState();
     stressForce = stressForcePoints( Vel, nu );
     println(stressForce[N-1]);
   
@@ -537,6 +554,7 @@ class FlexibleSheet extends LineSegBody {
     float pMass = pointMass;
     
     getState();
+    storeOldState();
     pressForce = pressForcePoints ( p );
     
     // Apply Forces for this step
