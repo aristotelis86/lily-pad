@@ -107,8 +107,9 @@ class FlexibleSheet extends LineSegBody {
   ControlPoint [] cpoints; // stores the control points of the system
   Spring [] springs; // stores the connecting springs
   
-  FlexibleSheet( float L_, float M_, float stiffness_, float x, float y, PVector align, Window window ) {
+  FlexibleSheet( float L_, float th_, float M_, float stiffness_, float x, float y, PVector align, Window window ) {
     super(x, y, window); 
+    thk = th_;
     weight = window.pdx(thk);
     
     align.normalize();
