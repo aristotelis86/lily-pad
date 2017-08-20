@@ -120,12 +120,12 @@ class FlexibleSheet extends LineSegBody {
     super.end();
     
     Length = L_;
-    Mass = M_;
+    pointMass = M_;
     stiffness = stiffness_;
     numOfpoints = this.coords.size();
     numOfsprings = numOfpoints - 1;
     segLength = 1; // resting length of each spring
-    pointMass = Mass/numOfpoints;
+    Mass = pointMass * numOfpoints;
     damping = Determine_damping();
     
     cpoints = new ControlPoint[numOfpoints];
