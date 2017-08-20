@@ -39,7 +39,9 @@ class ControlPoint {
   //================= Attributes ====================//
   
   PVector position; // current position
+  PVector positionOld;
   PVector velocity; // current velocity
+  PVector velocityOld;
   PVector force; // force acting on the point-mass
   float mass; // mass of the point
   boolean fixed; // fix the particle at its location
@@ -64,6 +66,9 @@ class ControlPoint {
     myWindow = myWindow_;
     c = color(random(1,255), random(1,255), random(1,255));
     thick = thk;
+    
+    positionOld = position.copy();
+    velocityOld = velocity.copy();
   }
   
   ControlPoint(PVector position_, float m, Window myWindow_) {this(position_, m,  1, myWindow_);}
