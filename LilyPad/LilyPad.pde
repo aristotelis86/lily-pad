@@ -26,6 +26,7 @@ float M = 10;
 float stiff = 20;
 
 float xpos = nx/6.;
+float xpos2 = 0.6*nx;
 float ypos = 20;
 float ypos2 = 25;
 PVector align = new PVector(1, 0);
@@ -48,22 +49,28 @@ void setup() {
   //view = new Window(nx, ny);
   view = new Window( 1, 1, nx, ny, 0, 0, width, height);
   
-  sheet = new FlexibleSheet[2];
+  sheet = new FlexibleSheet[4];
   
   
   sheet[0] = new FlexibleSheet(L, thick, M, stiff, xpos, ypos, align, view);
   sheet[1] = new FlexibleSheet(L, thick, M, stiff, xpos, ypos2, align, view);
+  sheet[2] = new FlexibleSheet(L, thick, M, stiff, xpos2, ypos, align, view);
+  sheet[3] = new FlexibleSheet(L, thick, M, stiff, xpos2, ypos2, align, view);
   
-  circle = new CircleBody(nx/3. + nx/6., ny/3., nx/6., view);
+  circle = new CircleBody(nx/3. + nx/12., ny/3., nx/6., view);
   
   plot = new FloodPlot(view); // standard window
   
   sheet[0].cpoints[0].makeFixed(); // pinning leading point
   sheet[1].cpoints[0].makeFixed(); // pinning leading point
+  sheet[2].cpoints[0].makeFixed(); // pinning leading point
+  sheet[3].cpoints[0].makeFixed(); // pinning leading point
   
   dt = sheet[0].dtmax;
   
   bodies = new BodyUnion(sheet[0], sheet[1]);
+  bodies.add(sheet[2]);
+  bodies.add(sheet[3]);
   bodies.add(circle);
   
   
