@@ -33,7 +33,7 @@ float dt;
 
 
 BDIM flow;
-FlexibleSheet sheet;
+FlexibleSheet sheet,sheet2;
 FloodPlot plot;
 CollisionSolver collisions;
 
@@ -48,7 +48,7 @@ void setup() {
   
   plot = new FloodPlot(view); // standard window
   
-  //sheet.cpoints[0].makeFixed(); // pinning leading point
+  sheet.cpoints[0].makeFixed(); // pinning leading point
   
   dt = sheet.dtmax;
   
@@ -79,7 +79,7 @@ void draw() {
   plot.display(flow.p);
   //plot.display(flow2.u.curl());
   
-  sheet.display();
+  sheet.mydisplay();
   
   t += dt;
   
