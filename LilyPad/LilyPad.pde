@@ -26,7 +26,7 @@ float M = 10;
 float stiff = 20;
 
 float xpos = nx/6.;
-float xpos2 = 0.6*nx;
+float xpos2 = 0.55*nx;
 float ypos = 20;
 float ypos2 = 25;
 PVector align = new PVector(1, 0);
@@ -95,6 +95,7 @@ void draw() {
     fl.update(dt, flow);
     fl.update2(dt, flow);
   }
+  circle.rotate( 0.2 );
   
   collisions.SolveCollisions();
   
