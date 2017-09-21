@@ -19,7 +19,7 @@ class FlexibleSheet extends LineSegBody {
   ControlPoint [] cpoints; // stores the control points of the system
   Spring [] springs; // stores the connecting springs
   
-  FlexibleSheet( float L_, float th_, float M_, int resol, float stiffness_, float x, float y, PVector align, Window window ) {
+  FlexibleSheet( float L_, float th_, float M_, int resol, float Str_, float x, float y, PVector align, Window window ) {
     super(x, y, window); 
     thk = th_;
     weight = window.pdx(thk);
@@ -34,9 +34,9 @@ class FlexibleSheet extends LineSegBody {
     
     Length = this.coords.get(0).dist(this.coords.get(this.coords.size()-1));
     pointMass = M_;
-    stiffness = stiffness_;
     numOfpoints = this.coords.size();
     numOfsprings = numOfpoints - 1;
+    stiffness = Determine_Stiffness( Str_ );
     segLength = resol; // resting length of each spring
     Mass = pointMass * numOfpoints;
     damping = Determine_damping();
@@ -47,7 +47,7 @@ class FlexibleSheet extends LineSegBody {
     for (int i = 0; i < numOfpoints; i++) cpoints[i] = new ControlPoint(this.coords.get(i), pointMass, thk, window);
     for (int i = 0; i < numOfsprings; i++) springs[i] = new Spring( cpoints[i], cpoints[i+1], segLength, stiffness, damping, window);
     
-    dtmax = Determine_time_step();
+    dtmax = Determine_time_step(Str_);
     InitUpdateVars();
   } // end of Constructor
   
@@ -113,6 +113,12 @@ class FlexibleSheet extends LineSegBody {
     return d;
   }
   
+  float Determine_Stiffness( float str ) {
+    float kk;
+    kk = (pointMass*sq(str))/((8*sq(numOfsprings))*sq(-1-sqrt(1-(sq(Length)/(8*sq(numOfsprings))))));
+    return kk;
+  }
+  
   // Determine the size of the time step
   float Determine_time_step() {
     float ReLam, ImLam, dt;
@@ -135,6 +141,13 @@ class FlexibleSheet extends LineSegBody {
     //dt = -1/(sq(ReLam)+sq(ImLam));
     return dt;
   } // end of Determine_time_step
+  
+  float Determine_time_step(float str) {
+    float tt;
+    tt = this.Length/(2*PI*str);
+    return tt;
+  }
+    
   
   // Determine relative positions based on the stiffness
   void Calculate_Stretched_Positions( PVector F ) {
