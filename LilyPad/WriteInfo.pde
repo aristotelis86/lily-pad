@@ -1,232 +1,127 @@
+/**********************************************************************
+      WriteInfo class: Produces the output txt files containing 
+      information on the test, the sheet(s) and the control 
+      points. Total energy and length of the sheet are recorded,
+      as well as position, velocity and force on each of the 
+      control points.
+
+Example code:
+      (To be filled)
+
+**********************************************************************/
 class WriteInfo {
-
-  PrintWriter [] outputPos; // output for positions
-  PrintWriter [] outputVel; // output for velocities
-  PrintWriter [] outputForce; // output for forces
-  PrintWriter [] outputEnergy; // output for energy
-
-  int Ncp, Nsg, Nfs; // number of lines to write per call
-  ArrayList<ControlPoint> [] myCPoints;
-  ArrayList<Spring> [] mySprings;
-
-  boolean posFlag = false;
-  boolean velFlag = false;
-  boolean forFlag = false;
-  boolean eneFlag = false;
+  
+  int Nfs; 
+  FlexibleSheet [] sheets;
+  PrintWriter [][] cpointsFiles;
+  PrintWriter [] energyFiles;
+  PrintWriter [] genInfoFiles;
 
   //================= Constructor ====================//
-  WriteInfo(ControlPoint cp) {
-    Ncp = 1;
-    outputPos = new PrintWriter[1];
-    outputVel = new PrintWriter[1];
-    outputForce = new PrintWriter[1];
-    outputEnergy = new PrintWriter[1];
-    
-    myCPoints =  new ArrayList[1];
-    myCPoints[0] = new ArrayList<ControlPoint>();
-    myCPoints[0].add(cp);
-    InitPositionOut(); posFlag = true; InitPoints(outputPos[0]);
-    InitVelocityOut(); velFlag = true; InitPoints(outputVel[0]);
-    InitForceOut(); forFlag = true; InitPoints(outputForce[0]);
-    InitEnergyOut(); eneFlag = true; InitPoints(outputEnergy[0]);
-  }
-
-  WriteInfo(ControlPoint [] cp) {
-    Ncp = cp.length;
-    outputPos = new PrintWriter[1];
-    outputVel = new PrintWriter[1];
-    outputForce = new PrintWriter[1];
-    outputEnergy = new PrintWriter[1];
-    
-    myCPoints =  new ArrayList[1];
-    myCPoints[0] = new ArrayList<ControlPoint>();
-    
-    for (int i=0; i<Ncp; i++) { myCPoints[0].add(cp[i]); }
-    InitPositionOut(); posFlag = true; InitPoints(outputPos[0]);
-    InitVelocityOut(); velFlag = true; InitPoints(outputVel[0]);
-    InitForceOut(); forFlag = true; InitPoints(outputForce[0]);
-    InitEnergyOut(); eneFlag = true; InitPoints(outputEnergy[0]);
-  }
-
   WriteInfo( FlexibleSheet fs ) {
     Nfs = 1;
-    Ncp = fs.numOfpoints;
-    Nsg = fs.numOfsprings;
+    int Ncp = fs.numOfpoints;
+    sheets = new FlexibleSheet[Nfs];
+    sheets[0] = fs;
     
-    outputPos = new PrintWriter[1];
-    outputVel = new PrintWriter[1];
-    outputForce = new PrintWriter[1];
-    outputEnergy = new PrintWriter[1];
-    
-    myCPoints =  new ArrayList[1]; 
-    mySprings =  new ArrayList[1];
-    myCPoints[0] = new ArrayList<ControlPoint>();
-    mySprings[0] = new ArrayList<Spring>();
-
-    for (int i=0; i<Ncp; i++) { 
-      myCPoints[0].add(fs.cpoints[i]);
+    cpointsFiles = new PrintWriter[Nfs][Ncp];
+    for (int i=0; i<Ncp; i++) {
+      cpointsFiles[0][i] = createWriter("./info/sheet0/cpoints"+i+".txt");
     }
-    for (int i=0; i<Nsg; i++) { 
-      mySprings[0].add(fs.springs[i]);
-    }
-    
-    InitPositionOut(); posFlag = true;
-    InitVelocityOut(); velFlag = true;
-    InitForceOut(); forFlag = true;
-    InitEnergyOut(); eneFlag = true;
-
-    InitSheetOut( fs );
+    energyFiles = new PrintWriter[Nfs];
+    energyFiles[0] = createWriter("./info/sheet0/energy.txt");
+    genInfoFiles = new PrintWriter[Nfs];
+    genInfoFiles[0] = createWriter("./info/sheet0/generalInfo.txt");
+    this.writeGenInfo();
   }
 
   WriteInfo(FlexibleSheet [] fs) {
     Nfs = fs.length;
-
-    outputPos = new PrintWriter[Nfs];
-    outputVel = new PrintWriter[Nfs];
-    outputForce = new PrintWriter[Nfs];
-    outputEnergy = new PrintWriter[Nfs];
-
-    myCPoints =  new ArrayList[Nfs]; 
-    mySprings =  new ArrayList[Nfs];
-
-
-    for ( int j=0; j<Nfs; j++ ) {
-      myCPoints[j] = new ArrayList<ControlPoint>();
-      mySprings[j] = new ArrayList<Spring>();
-      for (int i=0; i<fs[j].numOfpoints; i++) { 
-        myCPoints[j].add(fs[j].cpoints[i]);
-      }
-
-      InitPositionOut( j ); posFlag = true;
-      InitVelocityOut( j ); velFlag = true;
-      InitForceOut( j ); forFlag = true;
-
-      for (int i=0; i<fs[j].numOfsprings; i++) { 
-        mySprings[j].add(fs[j].springs[i]);
-      }
-
-      InitEnergyOut( j ); eneFlag = true;
+    sheets = new FlexibleSheet[Nfs];
+    for (int i=0; i<Nfs; i++) sheets[i] = fs[i];
+    
+    int Ncp = fs[0].numOfpoints;
+    for (FlexibleSheet ff : fs) {
+      if (ff.numOfpoints>Ncp) Ncp = ff.numOfpoints;
     }
-    InitSheetOut( fs );
+    
+    cpointsFiles = new PrintWriter[Nfs][Ncp];
+    for (int j=0; j<Nfs; j++) {
+      for (int i=0; i<fs[j].numOfpoints; i++) {
+        cpointsFiles[j][i] = createWriter("./info/sheet"+j+"/cpoints"+i+".txt"); 
+      }
+    }
+    energyFiles = new PrintWriter[Nfs];
+    for (int j=0; j<Nfs; j++) energyFiles[j] = createWriter("./info/sheet"+j+"/energy.txt");
+    genInfoFiles = new PrintWriter[Nfs];
+    for (int j=0; j<Nfs; j++) genInfoFiles[j] = createWriter("./info/sheet"+j+"/generalInfo.txt");
+    this.writeGenInfo();
   }
 
   //================= Methods ====================//
-  void InitPositionOut( int d) {
-    outputPos[d] = createWriter("./info/positions"+d+".txt");
-    outputPos[d].println("=========== Positions ==========");
-  }
-  void InitPositionOut() { 
-    InitPositionOut( 0 );
-  }
-
-  void InitVelocityOut( int d) {
-    outputVel[d] = createWriter("./info/velocities"+d+".txt");
-    outputVel[d].println("=========== Velocities ==========");
-  }
-  void InitVelocityOut() { 
-    InitVelocityOut( 0 );
-  }
-
-  void InitForceOut( int d ) {
-    outputForce[d] = createWriter("./info/forces"+d+".txt");
-    outputForce[d].println("=========== Forces ==========");
-  }
-  void InitForceOut() { 
-    InitForceOut( 0 );
-  }
-
-  void InitEnergyOut( int d ) {
-    outputEnergy[d] = createWriter("./info/energy"+d+".txt");
-    outputEnergy[d].println("=========== Energy ==========");
-  }
-  void InitEnergyOut() { 
-    InitEnergyOut( 0 );
-  }
-
-  void InitSheetOut( FlexibleSheet fs ) {
-    outputPos[0].println("Length: "+fs.Length+" Mass: "+fs.Mass+" Points: "+fs.numOfpoints+" Stiffness: "+fs.stiffness+" Damping: "+fs.damping+" dt: "+fs.dtmax);
-    outputVel[0].println("Length: "+fs.Length+" Mass: "+fs.Mass+" Points: "+fs.numOfpoints+" Stiffness: "+fs.stiffness+" Damping: "+fs.damping+" dt: "+fs.dtmax);
-    outputForce[0].println("Length: "+fs.Length+" Mass: "+fs.Mass+" Points: "+fs.numOfpoints+" Stiffness: "+fs.stiffness+" Damping: "+fs.damping+" dt: "+fs.dtmax);
-    outputEnergy[0].println("Length: "+fs.Length+" Mass: "+fs.Mass+" Points: "+fs.numOfpoints+" Stiffness: "+fs.stiffness+" Damping: "+fs.damping+" dt: "+fs.dtmax);
-  }
-  void InitSheetOut( FlexibleSheet [] fs ) {
-    for ( int i=0; i<fs.length; i++ ) {
-      outputPos[i].println("Length: "+fs[i].Length+" Mass: "+fs[i].Mass+" Points: "+fs[i].numOfpoints+" Stiffness: "+fs[i].stiffness+" Damping: "+fs[i].damping+" dt: "+fs[i].dtmax);
-      outputVel[i].println("Length: "+fs[i].Length+" Mass: "+fs[i].Mass+" Points: "+fs[i].numOfpoints+" Stiffness: "+fs[i].stiffness+" Damping: "+fs[i].damping+" dt: "+fs[i].dtmax);
-      outputForce[i].println("Length: "+fs[i].Length+" Mass: "+fs[i].Mass+" Points: "+fs[i].numOfpoints+" Stiffness: "+fs[i].stiffness+" Damping: "+fs[i].damping+" dt: "+fs[i].dtmax);
-      outputEnergy[i].println("Length: "+fs[i].Length+" Mass: "+fs[i].Mass+" Points: "+fs[i].numOfpoints+" Stiffness: "+fs[i].stiffness+" Damping: "+fs[i].damping+" dt: "+fs[i].dtmax);
+  // Write some general information on the sheet
+  void writeGenInfo() {
+    int N = genInfoFiles.length;
+    for (int i=0; i<N; i++) {
+      genInfoFiles[i].println("Length: "+sheets[i].Length);
+      genInfoFiles[i].println("Mass: "+sheets[i].Mass);
+      genInfoFiles[i].println("Points: "+sheets[i].numOfpoints);
+      genInfoFiles[i].println("Stiffness: "+sheets[i].stiffness);
+      genInfoFiles[i].println("Damping: "+sheets[i].damping);
+      genInfoFiles[i].println("dt: "+sheets[i].dtmax);
+      genInfoFiles[i].println("----------------------");
     }
   }
-
-  void InitPoints( PrintWriter out ) {
-    out.println("Points: "+Ncp);
-  }
-
-  void saveInfoCPoints( float t, int d ) {
-    outputPos[d].println("============= t = "+t+" ================");
-    outputVel[d].println("============= t = "+t+" ================");
-    outputForce[d].println("============= t = "+t+" ================");
-    outputEnergy[d].println("============= t = "+t+" ================");
-
-    for (int i=0; i<myCPoints[d].size(); i++) {
-      ControlPoint cp = myCPoints[d].get(i);
-      outputPos[d].println(cp.position.x + " " + cp.position.y);
-      outputVel[d].println(cp.velocity.x + " " + cp.velocity.y);
-      outputForce[d].println(cp.force.x + " " + cp.force.y);
-      float EE = 0.5*cp.mass*sq(cp.velocity.mag());
-      outputEnergy[d].println(EE);
-    }
-  }
-  void saveInfoCPoints( float t ) { saveInfoCPoints( t, 0 ); }
-  void saveInfoCPoints() { saveInfoCPoints( 0, 0 ); }
   
-  void saveInfoCPointsSheet( float t, int d ) {
-    outputPos[d].println("============= t = "+t+" ================");
-    outputVel[d].println("============= t = "+t+" ================");
-    outputForce[d].println("============= t = "+t+" ================");
-
-    for (int i=0; i<myCPoints[d].size(); i++) {
-      ControlPoint cp = myCPoints[d].get(i);
-      outputPos[d].println(cp.position.x + " " + cp.position.y);
-      outputVel[d].println(cp.velocity.x + " " + cp.velocity.y);
-      outputForce[d].println(cp.force.x + " " + cp.force.y);
+  // Add extra lines in the general info file (should be object-specific)
+  void addGenInfo( int id, String str ) {
+    genInfoFiles[id].println( str );
+  }
+  
+  // Calculate and write the total energy and the length of the sheet
+  void writeEnergy( float t, boolean fl ) {
+    for (int i=0; i<Nfs; i++) {
+      FlexibleSheet fs = sheets[i];
+      float EE = 0;
+      for (int j=0; j<fs.numOfsprings; j++) {
+        Spring spr = fs.springs[j];
+        EE += .5 * spr.stiffness * spr.getStretch() * spr.getStretch();
+      }
+      for (int j=0; j<fs.numOfpoints; j++) {
+        ControlPoint cpoi = fs.cpoints[j];
+        EE += .5 * cpoi.mass * cpoi.velocity.mag() * cpoi.velocity.mag();
+        if (fl) EE += cpoi.mass * (fs.window.idy(fs.window.dy) - cpoi.position.y);
+      }
+    energyFiles[i].println(t+","+EE+","+sheets[i].CurrentLength());
     }
   }
-  void saveInfoCPointsSheet( float t ) { saveInfoCPoints( t, 0 ); }
-  void saveInfoCPointsSheet() { saveInfoCPoints( 0, 0 ); }
-
-  void saveInfoSheet( float t, PVector g, float b, int d ) {
-    float gMag = g.mag();
-    saveInfoCPointsSheet( t, d );
-    float EE = 0;
-
-    outputEnergy[d].println("============= t = "+t+" ================");
-    for (int i=0; i<mySprings[d].size(); i++) {
-      Spring spr = mySprings[d].get(i);
-      EE += .5 * spr.stiffness * spr.getStretch() * spr.getStretch();
+  
+  // Write all info of control points 
+  void writeCPoints( float t ) {
+    for (int i=0; i<Nfs; i++) {
+      for (int j=0; j<sheets[i].numOfpoints; j++) {
+        sheets[i].cpoints[j].dampInfo( cpointsFiles[i][j], t );
+      }
     }
-    for (int i=0; i<myCPoints[d].size(); i++) {
-      ControlPoint cpoi = myCPoints[d].get(i);
-      EE += .5 * cpoi.mass * cpoi.velocity.mag() * cpoi.velocity.mag();
-      EE += cpoi.mass * gMag * (b - cpoi.position.y);
-    }
-    outputEnergy[d].println(EE);
   }
-  void saveInfoSheet( float t, int d ) { saveInfoSheet( t, new PVector(0,0), 0, d); }
-  void saveInfoSheet( float t ) { saveInfoSheet( t, new PVector(0,0), 0, 0); }
-  void saveInfoSheet() { saveInfoSheet( 0, new PVector(0,0), 0, 0); }
-
-  void closeInfos() {
-    if (posFlag) terminateFile(outputPos);
-    if (velFlag) terminateFile(outputVel);
-    if (forFlag) terminateFile(outputForce);
-    if (eneFlag) terminateFile(outputEnergy);
+  
+  // Method to call externally, handles all output
+  void dampAllInfo( float t, boolean fl ) {
+    this.writeEnergy( t, fl );
+    this.writeCPoints( t );
   }
-
-  void terminateFile(PrintWriter [] file) {
-    for (int j=0; j<file.length; j++) {
-      file[j].flush(); // Writes the remaining data to the file
-      file[j].close(); // Finishes the file
+  
+  // Gracefully terminate the writing of the files.
+  void terminateFiles() {
+    for (int i=0; i<Nfs; i++) {
+      energyFiles[i].flush();
+      energyFiles[i].close();
+      genInfoFiles[i].flush();
+      genInfoFiles[i].close();
+      for (int j=0; j<sheets[i].numOfpoints; j++) {
+        cpointsFiles[i][j].flush();
+        cpointsFiles[i][j].close();
+      }
     }
   }
 

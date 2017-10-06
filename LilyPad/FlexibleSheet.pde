@@ -1,58 +1,67 @@
-//==================== FlexibleSheet Class ==================//
-//
-// Example code:
+/**********************************************************************
+      FlexibleSheet class: Creates the flexible 1D object 
+      consisting of control points and springs. Properties
+      related to its behaviour are also created.
+      Methods to handle and update the object can be found 
+      here.
+      
+Example code:
+      (To be filled)
 
-//=========================================================================== //
+**********************************************************************/
 
 class FlexibleSheet extends LineSegBody {
   //============================= Attributes =================================//
-  int numOfpoints;
-  int numOfsprings;
+  int numOfpoints; // number of control points 
+  int numOfsprings; // number of springs
   float Length, Mass, segLength, pointMass, stiffness, damping;
-  float [] xcurrent, ycurrent, vxcurrent, vycurrent;
-  PVector [] accelCurrent, accelPred;
-  float [] xPred, yPred, vxPred, vyPred;
-  float [] xnew, ynew, vxnew, vynew;
-  float dtmax;
+  float dtmax; // maximum time step to be used 
   
   // Dependancy from other objects
   ControlPoint [] cpoints; // stores the control points of the system
   Spring [] springs; // stores the connecting springs
   
-  FlexibleSheet( float L_, float th_, float M_, int resol, float Str_, float x, float y, PVector align, Window window ) {
-    super(x, y, window); 
+  FlexibleSheet( float L_, float th_, float M_, int resol, float stiffness_, PVector lpos, PVector align, Window window, boolean damp ) {
+    super(lpos.x, lpos.y, window); 
     thk = th_;
     weight = window.pdx(thk);
     
-    align.normalize();
+    align.normalize(); // alignment axis of the sheet
     PVector X0;
-    for ( int i=0; i < L_; i+=resol ) {
-      X0 = PVector.add(new PVector(x,y), PVector.mult(align, i));
+    for ( int i=0; i <= L_; i+=resol ) {
+      X0 = PVector.add( lpos, PVector.mult(align, i));
       super.add(X0.x, X0.y);
     }
-    super.end();
+    super.end(false);
     
-    Length = this.coords.get(0).dist(this.coords.get(this.coords.size()-1));
-    pointMass = M_;
+    Length = this.coords.get(0).dist(this.coords.get(this.coords.size()-1)); // find the length
+    pointMass = M_; // linear mass distribution (Mass number)
+    stiffness = stiffness_; // stiffness of each spring
     numOfpoints = this.coords.size();
     numOfsprings = numOfpoints - 1;
-    stiffness = Determine_Stiffness( Str_ );
     segLength = resol; // resting length of each spring
-    Mass = pointMass * numOfpoints;
-    damping = Determine_damping();
+    Mass = pointMass * numOfpoints; // total mass of the sheet
+    
+    // define if damping is needed or not
+    if (damp) {
+      damping = Determine_damping(); 
+    }
+    else damping = 0;
     
     cpoints = new ControlPoint[numOfpoints];
     springs = new Spring[numOfsprings];
     
-    for (int i = 0; i < numOfpoints; i++) cpoints[i] = new ControlPoint(this.coords.get(i), pointMass, thk, window);
-    for (int i = 0; i < numOfsprings; i++) springs[i] = new Spring( cpoints[i], cpoints[i+1], segLength, stiffness, damping, window);
+    for (int i = 0; i < numOfpoints; i++) cpoints[i] = new ControlPoint( this.coords.get(i), pointMass, thk/2, window );
+    for (int i = 0; i < numOfsprings; i++) springs[i] = new Spring( cpoints[i], cpoints[i+1], segLength, stiffness, damping, thk, window );
     
-    dtmax = Determine_time_step(Str_);
-    InitUpdateVars();
+    // find the maximum time step size
+    if (damp) dtmax = Determine_time_step();
+    else dtmax = EigStiffMatrix();
+    
   } // end of Constructor
   
-  FlexibleSheet( float L_, float th_, float M_, float stiffness_, float x, float y, PVector align, Window window ) {
-    this( L_, th_, M_, 1, stiffness_, x, y, align, window);
+  FlexibleSheet( float L_, float th_, float M_, int resol, float stiffness_, PVector lpos, PVector align, Window window ) {
+    this( L_, th_, M_, resol, stiffness_, lpos, align, window, true);
   }
   
   //============================= Methods =================================//
@@ -90,68 +99,42 @@ class FlexibleSheet extends LineSegBody {
     for (ControlPoint cp : cpoints) cp.display();
   }
   
-  // Calculate current length of sheet
+  // Calculate current length of sheet (due to stretching or similar)
   float CurrentLength() {
     float newL = 0;
     for (int i=0; i<numOfpoints-1; i++) newL += this.coords.get(i).dist(this.coords.get(i+1));
     return newL;
   }
   
-  // Initialize state arrays for updating
-  void InitUpdateVars() {
-    xcurrent = new float[numOfpoints]; xPred = new float[numOfpoints]; xnew = new float[numOfpoints];
-    ycurrent = new float[numOfpoints]; yPred = new float[numOfpoints]; ynew = new float[numOfpoints];
-    vxcurrent = new float[numOfpoints]; vxPred = new float[numOfpoints]; vxnew = new float[numOfpoints];
-    vycurrent = new float[numOfpoints]; vyPred = new float[numOfpoints]; vynew = new float[numOfpoints];
-    accelCurrent = new PVector[numOfpoints];
-    accelPred = new PVector[numOfpoints];
-  }
-  
-  // Calculate damping coefficient for numerical purposes
-  float Determine_damping() {
-    float d = 2*sqrt(stiffness*pointMass);
-    return d;
-  }
-  
-  float Determine_Stiffness( float str ) {
-    float kk;
-    kk = (pointMass*sq(str))/((8*sq(numOfsprings))*sq(-1-sqrt(1-(sq(Length)/(8*sq(numOfsprings))))));
-    return kk;
-  }
-  
-  // Determine the size of the time step
-  float Determine_time_step() {
-    float ReLam, ImLam, dt;
-    float n = float(numOfsprings);
-    //float n = float(numOfpoints);
-    
-    float RootDet = 1-stiffness*pointMass*sq(Length)/(2*sq(damping)*sq(n));
-    float fact = 4*damping*sq(n)/(pointMass*sq(Length));
-    
-    if (RootDet<0) {
-      ReLam = -fact;
-      ImLam = -fact*sqrt(-RootDet);
+  // Update the state of the sheet 
+  void UpdateState( float [] Xnew, float [] Ynew, float [] VXnew, float [] VYnew ) {
+    for (int i = 0; i < numOfpoints; i++) {
+      cpoints[i].UpdatePosition(Xnew[i], Ynew[i]);
+      cpoints[i].UpdateVelocity(VXnew[i], VYnew[i]);
     }
-    else {
-      ReLam = fact*(-1-sqrt(RootDet));
-      ImLam = 0.0;
-    }
-    
-    dt = -1*ReLam/(sq(ReLam)+sq(ImLam));
-    //dt = -1/(sq(ReLam)+sq(ImLam));
-    return dt;
-  } // end of Determine_time_step
-  
-  float Determine_time_step(float str) {
-    float tt;
-    tt = this.Length/(2*PI*str);
-    return tt;
+    this.UpdateCenter();
+    super.getOrth();
+    super.getBox();
   }
-    
   
-  // Determine relative positions based on the stiffness
+  // Update the state of the sheet 
+  void UpdateState( float [] Xnew, float [] Ynew ) {
+    for (int i = 0; i < numOfpoints; i++) {
+      cpoints[i].UpdatePosition(Xnew[i], Ynew[i]);
+    }
+    this.UpdateCenter();
+    super.getOrth();
+    super.getBox();
+  }
+  
+  // Update the position of the center of the Body class (xc)
+  void UpdateCenter() {
+    super.xc.x = cpoints[0].position.x;
+    super.xc.y = cpoints[0].position.y;
+  }
+  
+  // Determine new steady state based on constant external forcing
   void Calculate_Stretched_Positions( PVector F ) {
-    
     float g = F.mag();
     float ll;
     PVector newll;
@@ -166,36 +149,10 @@ class FlexibleSheet extends LineSegBody {
       newll = PVector.add(cpoints[i].position, PVector.mult(FDir,ll));
       cpoints[i+1].UpdatePosition(newll.x, newll.y);
     }
+    this.UpdateCenter();
+    super.getOrth();
+    super.getBox();
   } // end of Calculate_Stretched_Positions
-  
-  // Update the state of the sheet 
-  void UpdateState( float [] Xnew, float [] Ynew, float [] VXnew, float [] VYnew ) {
-    for (int i = 0; i < numOfpoints; i++) {
-      cpoints[i].UpdatePosition(Xnew[i], Ynew[i]);
-      cpoints[i].UpdateVelocity(VXnew[i], VYnew[i]);
-    }
-    getOrth();
-    getBox();
-  }
-  
-  // Update the state of the sheet 
-  void UpdateState( float [] Xnew, float [] Ynew ) {
-    for (int i = 0; i < numOfpoints; i++) {
-      cpoints[i].UpdatePosition(Xnew[i], Ynew[i]);
-    }
-    getOrth();
-    getBox();
-  }
-  
-  // Get current positions and velocities
-  void getState() {
-    for(int i=0; i<numOfpoints; i++) {
-      xcurrent[i] = cpoints[i].position.x;
-      ycurrent[i] = cpoints[i].position.y;
-      vxcurrent[i] = cpoints[i].velocity.x;
-      vycurrent[i] = cpoints[i].velocity.y;
-    }
-  }
   
   // Move for testing purposes (translation only)
   void move() {
@@ -203,40 +160,14 @@ class FlexibleSheet extends LineSegBody {
       cp.velocity = new PVector(0.1, .2);
       cp.position.add( cp.velocity );
     }
-    getOrth();
-    getBox();
+    this.UpdateCenter();
+    super.getOrth();
+    super.getBox();
   }
-  
-  // Prescribed motion of the sheet to test effect on flow
-  void waveOnSheet( float t ) {
-    
-    float sinAmp = Length/5.;
-    float sinN = 1.;
-  
-    int nn = cpoints.length;
-    float [] x = new float[nn];
-    float [] y = new float[nn];
-    float [] vx = new float[nn];
-    float [] vy = new float[nn];
-    
-    x[0] = cpoints[0].position.x;
-    y[0] = cpoints[0].position.y;
-    vx[0] = 0.;
-    vy[0] = 0.;
-    for (int i = 1; i < nn; i++) {
-      x[i] = (Length/(nn-1)) + x[i-1];
-      y[i] = (sinAmp * sin(sinN*PI*(x[i]-x[0])/Length))*sin(2*t) + y[0];
-      vx[i] = 0.;
-      vy[i] = 2*cos(2*t)*(sinAmp * sin(sinN*PI*(x[i]-x[0])/Length));
-    }
-    UpdateState(x, y, vx, vy);
-    getOrth();
-    getBox();
-  }  
   
   // Apply internal Forces to control points
   void ApplyIntForces() {
-    for (Spring s : springs) s.applyAllForces();
+    for (Spring s : springs) s.ApplyAllForces();
   }
   
   // Apply external forces to control points
@@ -249,7 +180,7 @@ class FlexibleSheet extends LineSegBody {
     for (ControlPoint cp : cpoints) {
       PVector extg = g.copy();
       extg.mult(cp.mass);
-      cp.applyForce(extg);
+      cp.ApplyForce(extg);
     }
   }
   
@@ -279,7 +210,7 @@ class FlexibleSheet extends LineSegBody {
     return pf;
   }
   
-  // calculate the pressure force at each point
+  // calculate the shear stress force at each point
   PVector [] stressForcePoints ( VectorField Vel, float nu ) {
     
     Field omega = Vel.curl();
@@ -311,16 +242,16 @@ class FlexibleSheet extends LineSegBody {
     }
     
     // Apply Forces for this step
-    ClearForces();
-    ApplyIntForces();
-    ApplyGravity( p );
+    ClearForces(); // clear forces from control points 
+    ApplyIntForces(); // apply spring-damper forces
+    ApplyGravity( p ); // apply gravity
     
-    // calculate acceleration
-    for (ControlPoint cp : cpoints) {
-      if (!cp.fixed) cp.update( dt );
-    }
-    getOrth();
-    getBox();
+    // run the update through control points
+    for (ControlPoint cp : cpoints) cp.update( dt );
+
+    this.UpdateCenter();
+    super.getOrth();
+    super.getBox();
   } // end of update (prediction)
   
   void update2(float dt, PVector p) {
@@ -331,16 +262,16 @@ class FlexibleSheet extends LineSegBody {
     }
     
     // Apply Forces for the correction
-    ClearForces();
-    ApplyIntForces();
-    ApplyGravity( p );
+    ClearForces(); // clear forces from control points 
+    ApplyIntForces(); // apply spring-damper forces
+    ApplyGravity( p ); // apply gravity
     
-    // calculate acceleration for the correction
-    for (ControlPoint cp : cpoints) {
-      if (!cp.fixed) cp.update2( dt );
-    }
-    getOrth();
-    getBox();
+    // run the update through control points
+    for (ControlPoint cp : cpoints) cp.update2( dt );
+
+    this.UpdateCenter();
+    super.getOrth();
+    super.getBox();
   } // end of Trapezoid
   
   // Alternative Update based on Predictor-Corrector Scheme (gravity only)
@@ -352,17 +283,17 @@ class FlexibleSheet extends LineSegBody {
     }
     
     // Apply Forces for this step
-    ClearForces();
-    ApplyIntForces();
-    ApplyGravity( p );
+    ClearForces(); // clear forces from control points 
+    ApplyIntForces(); // apply spring-damper forces
+    ApplyGravity( p ); // apply gravity
     
-    // calculate acceleration
-    for (ControlPoint cp : cpoints) {
-      if (!cp.fixed) cp.updateAlt( dt );
-    }
-    getOrth();
-    getBox();
-  } // end of update (prediction)
+    // run the update through control points
+    for (ControlPoint cp : cpoints) cp.updateAlt( dt );
+
+    this.UpdateCenter();
+    super.getOrth();
+    super.getBox();
+  } // end of update (alternative prediction, already 2nd order in space)
   
   void updateAlt2(float dt, PVector p) {
     
@@ -372,20 +303,17 @@ class FlexibleSheet extends LineSegBody {
     }
     
     // Apply Forces for the correction
-    ClearForces();
-    ApplyIntForces();
-    ApplyGravity( p );
+    ClearForces(); // clear forces from control points
+    ApplyIntForces(); // apply spring-damper forces
+    ApplyGravity( p ); // apply gravity
     
-    // calculate acceleration for the correction
-    for (ControlPoint cp : cpoints) {
-      if (!cp.fixed) cp.updateAlt2( dt );
-    }
-    getOrth();
-    getBox();
-  } // end of Trapezoid
+    // run the update through control points
+    for (ControlPoint cp : cpoints) cp.updateAlt2( dt );
+    
+  } // end of alternative prediction-correction (2nd step update velocity only)
   
-  
-  // Update based on Predictor-Corrector Scheme (gravity only)
+  /*************** Fluid present **********************************/
+  // Update based on Predictor-Corrector Scheme
   void update( float dt, BDIM flow ) { update( dt, flow, new PVector(0,0)); }
   void update( float dt, BDIM flow, PVector g) {
     
@@ -393,27 +321,25 @@ class FlexibleSheet extends LineSegBody {
       println("WARNING dt constrained to maximum permitted:"+dtmax);
       dt = dtmax;
     }
+    PVector [] pressForce = new PVector[numOfpoints];
+    PVector [] stressForce = new PVector[numOfpoints];
     
-    int N = numOfpoints;
-    PVector [] pressForce = new PVector[N];
-    PVector [] stressForce = new PVector[N];
-    
-    pressForce = pressForcePoints ( flow.p );
-    stressForce = stressForcePoints( flow.u, flow.nu );
+    pressForce = pressForcePoints ( flow.p ); // get pressure force
+    stressForce = stressForcePoints( flow.u, flow.nu ); // get stress force
     
     // Apply Forces for this step
-    ClearForces();
-    ApplyIntForces();
-    ApplyExtForces( pressForce );
-    ApplyExtForces( stressForce );
-    ApplyGravity( g );
+    ClearForces(); // clear forces from control points
+    ApplyIntForces(); // apply spring-damper forces
+    ApplyExtForces( pressForce ); // apply pressure
+    ApplyExtForces( stressForce ); // apply stress
+    ApplyGravity( g ); // apply gravity (if any)
     
-    // calculate acceleration
-    for (ControlPoint cp : cpoints) {
-      if (!cp.fixed) cp.update( dt );
-    }
-    getOrth();
-    getBox();
+    // run the update through control points
+    for (ControlPoint cp : cpoints) cp.update( dt );
+
+    this.UpdateCenter();
+    super.getOrth();
+    super.getBox();
   } // end of update (prediction)
   
   void update2( float dt, BDIM flow ) { update2( dt, flow, new PVector(0,0)); }
@@ -423,30 +349,28 @@ class FlexibleSheet extends LineSegBody {
       println("WARNING dt constrained to maximum permitted:"+dtmax);
       dt = dtmax;
     }
+    PVector [] pressForce = new PVector[numOfpoints];
+    PVector [] stressForce = new PVector[numOfpoints];
     
-    int N = numOfpoints;
-    PVector [] pressForce = new PVector[N];
-    PVector [] stressForce = new PVector[N];
-    
-    pressForce = pressForcePoints ( flow.p );
-    stressForce = stressForcePoints( flow.u, flow.nu );
+    pressForce = pressForcePoints ( flow.p ); // get pressure force
+    stressForce = stressForcePoints( flow.u, flow.nu ); // get stress force
     
     // Apply Forces for the correction
-    ClearForces();
-    ApplyIntForces();
-    ApplyExtForces( pressForce );
-    ApplyExtForces( stressForce );
-    ApplyGravity( g );
+    ClearForces(); // clear forces from control points
+    ApplyIntForces(); // apply spring-damper forces
+    ApplyExtForces( pressForce ); // apply pressure
+    ApplyExtForces( stressForce ); // apply stress
+    ApplyGravity( g ); // apply gravity (if any)
     
-    // calculate acceleration for the correction
-    for (ControlPoint cp : cpoints) {
-      if (!cp.fixed) cp.update2( dt );
-    }
-    getOrth();
-    getBox();
+    // run the update through control points
+    for (ControlPoint cp : cpoints) cp.update2( dt );
+      
+    this.UpdateCenter();
+    super.getOrth();
+    super.getBox();
   } // end of Trapezoid
   
-  // Alternative Update based on Predictor-Corrector Scheme (gravity only)
+  // Alternative Update based on Predictor-Corrector Scheme
   void updateAlt( float dt, BDIM flow ) { updateAlt( dt, flow, new PVector(0,0)); }
   void updateAlt( float dt, BDIM flow, PVector g) {
     
@@ -454,27 +378,25 @@ class FlexibleSheet extends LineSegBody {
       println("WARNING dt constrained to maximum permitted:"+dtmax);
       dt = dtmax;
     }
+    PVector [] pressForce = new PVector[numOfpoints];
+    PVector [] stressForce = new PVector[numOfpoints];
     
-    int N = numOfpoints;
-    PVector [] pressForce = new PVector[N];
-    PVector [] stressForce = new PVector[N];
-    
-    pressForce = pressForcePoints ( flow.p );
-    stressForce = stressForcePoints( flow.u, flow.nu );
+    pressForce = pressForcePoints ( flow.p ); // get pressure force
+    stressForce = stressForcePoints( flow.u, flow.nu ); // get stress force
     
     // Apply Forces for this step
-    ClearForces();
-    ApplyIntForces();
-    ApplyExtForces( pressForce );
-    ApplyExtForces( stressForce );
-    ApplyGravity( g );
+    ClearForces(); // clear forces from control points
+    ApplyIntForces(); // apply spring-damper forces
+    ApplyExtForces( pressForce ); // apply pressure
+    ApplyExtForces( stressForce ); // apply stress
+    ApplyGravity( g ); // apply gravity (if any)
     
-    // calculate acceleration
-    for (ControlPoint cp : cpoints) {
-      if (!cp.fixed) cp.updateAlt( dt );
-    }
-    getOrth();
-    getBox();
+    // run the update through control points
+    for (ControlPoint cp : cpoints) cp.updateAlt( dt );
+    
+    this.UpdateCenter();
+    super.getOrth();
+    super.getBox();
   } // end of update (prediction)
   
   void updateAlt2( float dt, BDIM flow ) { updateAlt2( dt, flow, new PVector(0,0)); }
@@ -484,30 +406,113 @@ class FlexibleSheet extends LineSegBody {
       println("WARNING dt constrained to maximum permitted:"+dtmax);
       dt = dtmax;
     }
+    PVector [] pressForce = new PVector[numOfpoints];
+    PVector [] stressForce = new PVector[numOfpoints];
     
-    int N = numOfpoints;
-    PVector [] pressForce = new PVector[N];
-    PVector [] stressForce = new PVector[N];
+    pressForce = pressForcePoints ( flow.p ); // get pressure force
+    stressForce = stressForcePoints( flow.u, flow.nu ); // get stress
     
-    pressForce = pressForcePoints ( flow.p );
-    stressForce = stressForcePoints( flow.u, flow.nu );
-    
-    // Apply Forces for the correction
-    ClearForces();
-    ApplyIntForces();
-    ApplyExtForces( pressForce );
-    ApplyExtForces( stressForce );
-    ApplyGravity( g );
+    // run the update through control points
+    ClearForces(); // clear forces from control points
+    ApplyIntForces(); // apply spring-damper forces
+    ApplyExtForces( pressForce ); // apply pressure
+    ApplyExtForces( stressForce ); // apply stress
+    ApplyGravity( g ); // apply gravity (if any)
     
     // calculate acceleration for the correction
-    for (ControlPoint cp : cpoints) {
-      if (!cp.fixed) cp.updateAlt2( dt );
-    }
-    getOrth();
-    getBox();
+    for (ControlPoint cp : cpoints) cp.updateAlt2( dt );
   } // end of Trapezoid
   
+  // Calculate damping coefficient for numerical purposes
+  float Determine_damping() {
+    float d = 2*sqrt(stiffness*pointMass);
+    return d;
+  }
+  
+  // Determine the size of the time step (damping is on)
+  float Determine_time_step() {
+    float ReLam, ImLam, dt;
+    float n = float(numOfsprings);
+    float RootDet = 1-stiffness*pointMass*sq(Length)/(2*sq(damping)*sq(n));
+    float fact = 4*damping*sq(n)/(pointMass*sq(Length));
+    
+    if (RootDet<0) {
+      ReLam = -fact;
+      ImLam = -fact*sqrt(-RootDet);
+    }
+    else {
+      ReLam = fact*(-1-sqrt(RootDet));
+      ImLam = 0.0;
+    }
+    
+    dt = -1*ReLam/(sq(ReLam)+sq(ImLam));
+    //dt = -1/(sq(ReLam)+sq(ImLam));
+    return dt;
+  } // end of Determine_time_step
   
   
+  // Find dominant eigenvalue of stiffness matrix
+  float EigStiffMatrix() {
+    float [][] K = new float[numOfpoints][numOfpoints];
+    float [] X0 = new float[numOfpoints];
+    float [] Xn;
+    float lambda;
+    
+    for (int i=0; i<numOfpoints; i++) X0[i] = pow(-1,i);
+    
+    for (int i=0; i<numOfpoints; i++) {
+      for (int j=0; j<numOfpoints; j++) {
+        if (i==j) {
+          if ((i==0) || (i==numOfpoints-1)) K[i][j] = -1;
+          else K[i][j] = -2;
+        }
+        else if ((j==i+1) || (j==i-1)) K[i][j] = 1;
+        else K[i][j] = 0; 
+      }
+    }
+    
+    Xn = MatProduct( K, X0);
+    for (int n=0; n<10*numOfpoints; n++) {
+      Xn = MatProduct( K, Xn);
+    }
+    
+    lambda = ArrayProd( Xn, X0 )/ArrayProd( X0, X0);
+    
+    float dt = pointMass/abs(stiffness*lambda);
+    return dt;
+  }
+  
+  // Calculate the product of square matrices
+  float [] MatProduct( float [][] A, float [] c ) {
+    int iRow = A.length;
+    int jColumn = A[0].length;
+    int resSize = c.length;
+    float [] result = new float[resSize];
+    float [] absResult = new float[resSize];
+    float minResult;
+    for (int i=0; i<resSize; i++) result[i] = 0;
+    
+    for (int i=0; i<iRow; i++) {
+      for (int j=0; j<jColumn; j++) {
+        result[i] += A[i][j]*c[j];
+      }
+    }
+    
+    for (int i=0; i<resSize; i++) absResult[i] = abs(result[i]);
+    minResult = absResult[0];
+    for (int i=1; i<resSize; i++) {
+      if (absResult[i]<minResult) minResult = absResult[i];
+    }
+    for (int i=0; i<resSize; i++) result[i] = result[i]/minResult;
+    return result;
+  }
+  
+  // Calculate product of arrays
+  float ArrayProd( float [] a, float [] b ) {
+    int resSize = a.length;
+    float result = 0;
+    for (int i=0; i<resSize; i++) result += a[i]*b[i]; 
+    return result;
+  }
   
 } //=========== end of FlexibleSheet class ===============

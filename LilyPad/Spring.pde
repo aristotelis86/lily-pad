@@ -1,44 +1,49 @@
-//=========================== Spring Class ========================//
-//**** Extended from original to include dashpot functionality ****//
+/**********************************************************************
+      Spring class: Creates the springs of a flexible 
+      structure to simulate its internal dynamics. 
 
-//-------------------- Example Code for Testing -------------------//
-//Window view; // window in h-units
-//int m = 40; // x-dir
-//int n = 40; // y-dir
+Example code:
+int nx = 150; // x-dir resolution
+int ny = 150; // y-dir resolution
+int N = 2;
+PVector gravity = new PVector(0,0);
 
-//ControlPoint cpoint1, cpoint2;
-//Spring spring;
+Window view; 
+ControlPoint [] cpoints;
+Spring spring;
+CollisionHandler collider;
 
-//void setup() {
-//  size(500, 500);    
-//  frameRate(10);
-//  view = new Window(m, n);
-  
-//  cpoint1 = new ControlPoint(10., 10., 20, view);
-//  cpoint2 = new ControlPoint(10., 20., 100, view);
-  
-//  spring = new Spring( cpoint1, cpoint2, 15, 50, 15, view);
-//  spring.thick = view.pdx(.5);
-  
-//} // end of setup
+void settings(){
+    size(600, 600);
+}
 
+void setup() {
+  
+  Window view = new Window(1, 1, nx, ny, 0, 0, width, height);
+  
+  cpoints = new ControlPoint[N];
+  cpoints[0] = new ControlPoint( new PVector(nx/3.,ny/2.), 5,  10, view );
+  cpoints[1] = new ControlPoint( new PVector(2*nx/3.,ny/2.), 5,  10, view );
+  
+  spring = new Spring(cpoints[0], cpoints[1], nx/8., 5, 0.5, 1, view );
+  
+  collider = new CollisionHandler( cpoints );
+} // end of setup
 
-//void draw() {
-//  background(3);
-  
-//  spring.display();
-//  cpoint1.display();
-//  cpoint2.display();
-  
-//  spring.applyAllForces();
-  
-//  cpoint1.update(0.1);
-//  cpoint2.update(0.1);
-  
-//  println(cpoint1.distance(cpoint2));
-//  //noLoop();
-//}
-
+void draw() {
+  background(185);
+  for (ControlPoint cp : cpoints) cp.clearForce();
+  spring.ApplyAllForces();
+  for (ControlPoint cp : cpoints) {
+    cp.ApplyForce( gravity );
+    cp.updateAlt( 0.1 );
+    cp.updateAlt2( 0.1 );
+  }
+  collider.HandleCollisions();
+  for (ControlPoint cp : cpoints) cp.display();
+  spring.display();
+}
+**********************************************************************/
 
 class Spring {
   //========== Attributes - Physical ============//
@@ -50,10 +55,10 @@ class Spring {
   // For display purposes
   Window myWindow;
   float thick; // default thickness = 1
-  color c;
+  color c; // default random coloring
   
   //=============== Constructor =================//
-  Spring( ControlPoint a, ControlPoint b, float r, float s, float d, Window w) {
+  Spring( ControlPoint a, ControlPoint b, float r, float s, float d, float th_, Window w ) {
     p1 = a;
     p2 = b;
     
@@ -62,23 +67,30 @@ class Spring {
     damping = d;
     
     myWindow = w;
-    thick = myWindow.pdx(1);
-    c = color(random(1,255), random(1,255), random(1,255));
-    
+    thick = th_;
+    c = #FF9900; 
   }
-  
+  Spring( ControlPoint a, ControlPoint b, float r, float s, float d, Window w) { 
+    this( a, b, r, s, d, 1, w);
+  }
+  Spring( ControlPoint a, ControlPoint b, Window w) { 
+    this( a, b, 1, 1, 1, 1, w);
+  }
   
   //=================== Methods ================//
   
   // Display
   void display(){
-    strokeWeight(thick);
+    strokeWeight(thick*myWindow.x.r);
     stroke(c);
     line(myWindow.px(p1.position.x), myWindow.py(p1.position.y), myWindow.px(p2.position.x), myWindow.py(p2.position.y));
   }
   
+  // Set thickness
+  void matchThickness() { thick = 0.5*(p1.diameter+p2.diameter); }
+  
   // Apply Forces on connected particles
-  void applyAllForces() {
+  void ApplyAllForces() {
     // apply force due to spring
     PVector springDir = PVector.sub(p1.position, p2.position);
     
@@ -121,6 +133,11 @@ class Spring {
   // Update the damping coefficient if needed
   void UpdateDamping(float dd) {
     damping = dd;
+  }
+  
+  // Export info on the motion of the control points
+  void dampInfo( PrintWriter outFile ) {
+    outFile.println(getStretch());
   }
   
 } // end of Spring class
