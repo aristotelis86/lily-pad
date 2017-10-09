@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# Library with all the necessary functions to perform the
+# analysis of the motion of the flexible sheets in or out
+# of fluid.
+# Some basic parameters are defined here. 
+#       - the folder from which to read (readDir)
+#       - the folder to create output figures (saveDir)
+#       - size of fonts (fSize)
+#       - resolution of graphics (myDpi)
+#       - size of figures in inches (figSize)
+# By default all figures are hidden.
 
 import os
 import numpy as np
@@ -283,10 +292,7 @@ def normalMode_frequency_plot( sheetN, pointN=-1, mode=1, stretchRatio=0.1, alig
     # The mode (1,2,3,..) is needed as well as the 
     # stretching ratio of the entire sheet and its 
     # alignment (x,y). This information should be 
-    # available as an output from 
-    #
-    #     READ_SHEET_INFO
-    #
+    # available as an output from READ_SHEET_INFO
     # function. The dominant frequency expected and
     # recorded from the data is given on the fig.
     
@@ -390,7 +396,6 @@ def custom_FFT( data, stepT ):
     freq = np.linspace(0.0, 1.0/(2.0*stepT), Nsize//2)
     
     return freq[1:], 2.0/Nsize * np.abs(fftOut[1:Nsize//2])
-
 
 
 # Found it on: http://nbviewer.jupyter.org/github/demotu/BMC/blob/master/notebooks/DetectPeaks.ipynb
