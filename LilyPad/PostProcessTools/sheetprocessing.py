@@ -232,8 +232,8 @@ def frequency_plot( sheetN, pointN=-1 ):
     L, M, P, S, D, dt = read_sheet_info( sheetN, show=False );
     
     if pointN<0:
-        simTime, xpos, ypos, xvel, yvel, xforce, yforce = read_cpoint_file( sheetN, P-1 );
-        myPoint = P-1
+        simTime, xpos, ypos, xvel, yvel, xforce, yforce = read_cpoint_file( sheetN, int(P-1) );
+        myPoint = int(P-1)
     else:
         simTime, xpos, ypos, xvel, yvel, xforce, yforce = read_cpoint_file( sheetN, pointN );
         myPoint = pointN
@@ -241,15 +241,19 @@ def frequency_plot( sheetN, pointN=-1 ):
     figtit = "Length=%.2f, Mass=%.2f, # Point=%d/%d \n Stiffness=%.1f, Damping=%.1f, dt=%.2e" % (L, M, myPoint+1, P, S, D, dt)
         
     freq, spec = custom_FFT( xpos, dt );
+    PeakInd = detect_peaks(spec);
+    
+    plotText = "First 3 dominant Frequencies \n 1: %.3f \n 2: %.3f \n 3: %.3f" % (freq[PeakInd[0]], freq[PeakInd[1]], freq[PeakInd[2]]); 
     
     h = plt.figure(num=None, figsize=figSize, dpi=myDpi)
     plt.plot(freq, spec)
     plt.title(figtit, fontsize=fSize)
     plt.xlabel("frequency",fontsize=fSize)
     plt.ylabel("power",fontsize=fSize)
-    plt.xlim(0,5)
+    plt.xlim(0,3*freq[PeakInd[2]])
     plt.legend()
     plt.grid();
+    plt.text(2.8*freq[PeakInd[2]], spec[PeakInd[0]], plotText, horizontalalignment='right', verticalalignment='top', fontsize=fSize-1)
     h.savefig(saveDir+"fft_stream_sheet"+str(sheetN)+"_cp"+str(myPoint)+".png")
     plt.close(h)
     
@@ -266,7 +270,7 @@ def frequency_plot( sheetN, pointN=-1 ):
     plt.xlim(0,3*freq[PeakInd[2]])
     plt.legend()
     plt.grid();
-    plt.text(2.8*freq[PeakInd[2]], freq[PeakInd[3]], plotText, horizontalalignment='right', fontsize=fSize-1)
+    plt.text(2.8*freq[PeakInd[2]], spec[PeakInd[0]], plotText, horizontalalignment='right', verticalalignment='top', fontsize=fSize-1)
     h.savefig(saveDir+"fft_cross_sheet"+str(sheetN)+"_cp"+str(myPoint)+".png")
     plt.close(h)
     
@@ -290,12 +294,12 @@ def normalMode_frequency_plot( sheetN, pointN=-1, mode=1, stretchRatio=0.1, alig
     
     if (mode==1 or mode==3):
         if pointN<0:
-            simTime, xpos, ypos, xvel, yvel, xforce, yforce = read_cpoint_file( sheetN, floor(P/2) );
-            myPoint = floor(P/2)
+            simTime, xpos, ypos, xvel, yvel, xforce, yforce = read_cpoint_file( sheetN, int(P/2) );
+            myPoint = int(P/2)
     elif mode==2:
         if pointN<0:
-            simTime, xpos, ypos, xvel, yvel, xforce, yforce = read_cpoint_file( sheetN, floor(P/4) );
-            myPoint = floor(P/4)
+            simTime, xpos, ypos, xvel, yvel, xforce, yforce = read_cpoint_file( sheetN, int(P/4) );
+            myPoint = int(P/4)
     else:
         print("\n ")
         print("Please define mode number and control point to proceed!\n")
@@ -322,7 +326,7 @@ def normalMode_frequency_plot( sheetN, pointN=-1, mode=1, stretchRatio=0.1, alig
     plt.xlim(0,3*freq[PeakInd[0]])
     plt.legend()
     plt.grid();
-    plt.text(2.8*freq[PeakInd[0]], freq[PeakInd[2]], plotText, horizontalalignment='right', fontsize=fSize-1)
+    plt.text(2.8*freq[PeakInd[0]], spec[PeakInd[0]], plotText, horizontalalignment='right', verticalalignment='top', fontsize=fSize-1)
     h.savefig(saveDir+"fft_mode"+str(mode)+"_sheet"+str(sheetN)+"_cp"+str(myPoint)+".png")
     plt.close(h)
     
@@ -342,8 +346,8 @@ def impulse_frequency_analysis( sheetN, newL, pointN=-1, g=10, align="y" ):
     
     L, M, P, S, D, dt = read_sheet_info( sheetN, show=False );
     if pointN<0:
-        simTime, xpos, ypos, xvel, yvel, xforce, yforce = read_cpoint_file( sheetN, P-1 );
-        myPoint = P-1;
+        simTime, xpos, ypos, xvel, yvel, xforce, yforce = read_cpoint_file( sheetN, int(P-1) );
+        myPoint = int(P-1);
     else:
         simTime, xpos, ypos, xvel, yvel, xforce, yforce = read_cpoint_file( sheetN, pointN );
         myPoint = pointN;
@@ -373,7 +377,7 @@ def impulse_frequency_analysis( sheetN, newL, pointN=-1, g=10, align="y" ):
     plt.xlim(0,3*freq[PeakInd[2]])
     plt.legend()
     plt.grid();
-    plt.text(2.8*freq[PeakInd[2]], freq[PeakInd[3]], plotText, horizontalalignment='right', fontsize=fSize-1)
+    plt.text(2.8*freq[PeakInd[2]], spec[PeakInd[0]], plotText, horizontalalignment='right', verticalalignment='top', fontsize=fSize-1)
     h.savefig(saveDir+"fft_impulse_sheet"+str(sheetN)+"_cp"+str(myPoint)+".png")
     plt.close(h)
     
