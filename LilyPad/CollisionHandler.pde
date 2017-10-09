@@ -103,7 +103,7 @@ class CollisionHandler {
   }
   // Resolve boundary collisions
   void ResolveBoundCollisions( String bound, ControlPoint cp ){
-    float e = 0.4;
+    float e = 0.95;
     if ((bound.equals("North")==true) || (bound.equals("South")==true)) {
       float vx = cp.velocity.x;
       float vy = -e*cp.velocity.y;
