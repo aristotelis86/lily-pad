@@ -4,7 +4,33 @@
       boxes can be created.
 
 Example code:
-      (To be filled)
+int nx = (int)pow(2,4); // x-dir
+int ny = (int)pow(2,4); // y-dir
+
+PVector lpos = new PVector( nx/3., 0.5*ny );
+
+ControlPoint [] cpoints = new ControlPoint[2];
+Spring spring;
+Window view;
+BoundBox box;
+
+void settings(){
+    size(600, 600);
+}
+
+void setup() {
+  view = new Window( 1, 1, nx, ny, 0, 0, width, height);
+  cpoints[0] = new ControlPoint( lpos, 3,  1, view );
+  cpoints[1] = new ControlPoint( PVector.add(lpos,new PVector(nx/3.,ny/4.)), 3, 1, view );
+  
+  spring = new Spring( cpoints[0], cpoints[1], nx/3., 100, 0, 1, view );
+  box = new BoundBox( spring );
+  
+  box.displayAABB(); // display AABB box as green
+  box.displayOBB(); // display OBB box with red lines
+  cpoints[0].display(); cpoints[1].display();
+  
+} // end of setup
 
 **********************************************************************/
 class BoundBox {
@@ -15,7 +41,6 @@ class BoundBox {
   PVector Min, Max;
   OrthoNormal orth;
   PVector Normal;
-  
   
   BoundBox( Spring sp1_ ) {
     spA = sp1_;
@@ -43,7 +68,6 @@ class BoundBox {
     vertices[2] = new PVector(line1.End.x, line1.End.y);
     vertices[3] = new PVector(line2.Start.x, line2.Start.y);
     vertices[4] = new PVector(line2.End.x, line2.End.y);
-    
   }
   
   void createAABB() {  
@@ -76,9 +100,6 @@ class BoundBox {
       LineSegment class: Creates a line segment given its
       starting and ending points (PVectors). Auxiliary 
       class to the collision detection methods.
-
-Example code:
-      (To be filled)
 
 **********************************************************************/
 class LineSegment {
