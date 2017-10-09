@@ -4,8 +4,40 @@
       during the runs. 
 
 Example code:
-      (To be filled)
+int nx = (int)pow(2,4); // x-dir
+int ny = (int)pow(2,4); // y-dir
 
+int N = 5; // number of control points
+PVector gravity = new PVector(2,4);
+
+Window view; 
+ControlPoint [] cpoints = new ControlPoint[N];
+CollisionHandler collide;
+
+void settings(){
+    size(600, 600);
+}
+
+void setup() {
+  view = new Window( 1, 1, nx, ny, 0, 0, width, height);
+  for (int i=0; i<N; i++) {
+    cpoints[i] = new ControlPoint( new PVector(random(view.x.inE),random(view.y.inE)), 5,  10, view );
+  }
+  collide = new CollisionHandler( cpoints );
+}
+
+void draw() {
+  background(185);
+  for (ControlPoint cp : cpoints) {
+    cp.clearForce();
+    cp.ApplyForce( gravity );
+    cp.updateAlt( 0.05 );
+    cp.updateAlt2( 0.05 );
+  }
+   
+  collide.HandleCollisions();
+  for (ControlPoint cp : cpoints) cp.display();
+}
 **********************************************************************/
 
 class ControlPoint {
