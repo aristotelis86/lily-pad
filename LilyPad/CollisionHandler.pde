@@ -3,9 +3,6 @@
       are gathered by this class to handle any collisions during
       the simulation. Detection and resolution are separated.
 
-Example code:
-      (To be filled)
-
 **********************************************************************/
 class CollisionHandler {
   //================= Attributes ====================//
@@ -269,8 +266,7 @@ class CollisionHandler {
   // Main Handling method
   void HandleCollisions() {
     // There should be a loop that restarts everytime a collision happened.
-    // In this way a collision-free state is ensured by the end of this seemingly 
-    // endless loop....
+    // In this way a collision-free state is ensured every time...
     this.DetectBoundCollision();
     this.DetectCPointCPointCollision();
     this.DetectSpringSpringCollision();
