@@ -26,7 +26,7 @@ myLib.normalMode_frequency_plot( sheetN, pointN=-1, mode=1, stretchRatio=0.1, al
 # create+save the plot of the FFT analysis of the vibration (pinned-pinned)
 # tracked by one control point. 
                                        
-myLib.impulse_frequency_analysis( sheetN, pointN=-1, newL=44.03, pointN, g=10, align="y" )
+myLib.impulse_frequency_analysis( sheetN, newL=44.03, pointN=-1, g=10, align="y" )
 # create+save the plot of the FFT analysis of the vibration (pinned-free)
 # tracked by one control point. 
                                        
