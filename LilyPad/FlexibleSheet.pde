@@ -6,8 +6,64 @@
       here.
       
 Example code:
-      (To be filled)
+Window view; // window in h-units
+FloodPlot plot;
 
+boolean saveimg = false;
+
+int nx = (int)pow(2,6); // x-dir
+int ny = (int)pow(2,6); // y-dir
+
+float Re = 100;
+float L = nx/4.;
+float thick = 1;
+int resol = 1;
+float M = 10;
+float stiff = 100;
+PVector lpos = new PVector( nx/3., 0.55*ny );
+PVector align = new PVector(1, 0);
+
+float t=0;
+float dt;
+
+BDIM flow;
+FlexibleSheet sheet;
+
+void settings(){
+    size(600, 600);
+}
+
+void setup() {
+  view = new Window( 1, 1, nx, ny, 0, 0, width, height);
+  
+  sheet = new FlexibleSheet(L, thick, M, resol, stiff, lpos, align, view);
+  sheet.cpoints[0].makeFixed(); // pinning leading point
+  
+  plot = new FloodPlot(view); // standard window
+  
+  dt = sheet.dtmax;
+  
+  flow = new BDIM(nx, ny, dt, sheet, 1/Re, true);
+  
+  plot.range = new Scale(-1,1);
+  plot.hue = new Scale(100, 40);
+  plot.setLegend("pressure");
+  
+} // end of setup
+
+
+void draw() {
+  
+  sheet.waveOnSheet( t, sheet.Length/10., 2 );
+  flow.update(sheet);
+  flow.update2();
+  
+  plot.display(flow.p);
+  sheet.display();
+  
+  if (saveimg) saveFrame("movie/frame_######.png");
+  t += dt;
+}
 **********************************************************************/
 
 class FlexibleSheet extends LineSegBody {
@@ -513,6 +569,31 @@ class FlexibleSheet extends LineSegBody {
     float result = 0;
     for (int i=0; i<resSize; i++) result += a[i]*b[i]; 
     return result;
+  }
+  
+  // Prescribed motion of the sheet to test effect on flow
+  void waveOnSheet( float t, float sinAmp, float sinN ) {
+    
+    int nn = cpoints.length;
+    float [] x = new float[nn];
+    float [] y = new float[nn];
+    float [] vx = new float[nn];
+    float [] vy = new float[nn];
+    
+    x[0] = cpoints[0].position.x;
+    y[0] = cpoints[0].position.y;
+    vx[0] = 0.;
+    vy[0] = 0.;
+    for (int i = 1; i < nn; i++) {
+      x[i] = (Length/(nn-1)) + x[i-1];
+      y[i] = (sinAmp * sin(sinN*PI*(x[i]-x[0])/Length))*sin(2*t) + y[0];
+      vx[i] = 0.;
+      vy[i] = 2*cos(2*t)*(sinAmp * sin(sinN*PI*(x[i]-x[0])/Length));
+    }
+    UpdateState(x, y, vx, vy);
+    this.UpdateCenter();
+    super.getOrth();
+    super.getBox();
   }
   
 } //=========== end of FlexibleSheet class ===============
