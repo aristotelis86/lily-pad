@@ -5,9 +5,6 @@
       as well as position, velocity and force on each of the 
       control points.
 
-Example code:
-      (To be filled)
-
 **********************************************************************/
 class WriteInfo {
   
